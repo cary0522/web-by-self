@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) @map("ID")
+  account   String   @unique
+  password  String
+  email     String?  @unique
+  name      String?
+  role      Int      @default(1)
+  createdAt DateTime @default(now()) @map("CreatedAt")
+  updatedAt DateTime @updatedAt @map("UpdatedAt")
+
+  // 關聯到 Site
+  createdSites Site[] @relation("SiteCreatedBy")
+
+  // 關聯到 SiteMenu
+  createdSiteMenus SiteMenu[] @relation("SiteMenuCreatedBy")
+
+  // 關聯到 Page
+  createdPages Page[] @relation("CreatedPages")
+  updatedPages Page[] @relation("UpdatedPages")
+
+  @@map("Users")
+}
+
+// Site - 網站基本資訊，包含網站名稱、代碼、域名、預設語言、主題設定等，關聯到網站菜單、頁面、公告等內容
+model Site {
+  id     Int    @id @default(autoincrement())
+  name   String @db.VarChar(200)
+  domain String @db.VarChar(255)
+
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User?      @relation("SiteCreatedBy", fields: [createdById], references: [id])
+  menus     SiteMenu[]
+  pages     Page[]
+  files     File[]
+
+  @@index([createdById])
+  @@map("Sites")
+}
+
+// SiteMenu - 網站菜單，包含菜單名稱、路由、類型、目標等資訊，使用 siteId 和 routePath 作為唯一識別，方便前台路由使用
+model SiteMenu {
+  id       Int  @id @default(autoincrement())
+  siteId   Int
+  parentId Int? // 用於多層級菜單結構
+  pageId   Int? // 關聯到 Page，當 viewType 是 page 時使用
+
+  name String @db.VarChar(200)
+  slug String @db.VarChar(200)
+
+  viewTypeId Int?   // FK to ViewType.id
+
+  icon      String? @db.VarChar(100)
+  sortOrder Int     @default(0)
+  isEnabled Boolean @default(true)
+  isParent  Boolean @default(false) // 根據是否有子菜單來設定
+
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
+
+  site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  parent   SiteMenu?  @relation("SiteMenuToSiteMenu", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children SiteMenu[] @relation("SiteMenuToSiteMenu")
+
+  page      Page? @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  createdBy User? @relation("SiteMenuCreatedBy", fields: [createdById], references: [id])
+
+  viewTypeRelation ViewType? @relation("SiteMenuViewType", fields: [viewTypeId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+  @@index([parentId])
+  @@index([pageId])
+  @@index([createdById])
+  @@index([isDeleted])
+  @@map("SiteMenus")
+}
+
+// 各頁面內容，包含標題、內容、狀態等，使用 slug 作為唯一識別，方便前台路由使用
+model Page {
+  id      Int     @id @default(autoincrement()) @map("ID")
+  title   String  @map("Title") @db.VarChar(200)
+  content String? @map("Content") @db.MediumText
+  status  Int     @default(1) @map("Status") @db.TinyInt
+
+  // 關聯檔案
+  relatedFileID Int?  @map("RelatedFileID")
+  file          File? @relation("PageFiles", fields: [relatedFileID], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  // 建立者與更新者
+  createdBy Int?  @map("CreatedBy")
+  creator   User? @relation("CreatedPages", fields: [createdBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  updatedBy Int?  @map("UpdatedBy")
+  updater   User? @relation("UpdatedPages", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  createdAt DateTime @default(now()) @map("CreatedAt")
+  updatedAt DateTime @updatedAt @map("UpdatedAt")
+
+  // 關聯到 Site
+  siteId Int?       @map("SiteID")
+  site   Site?      @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  menus  SiteMenu[]
+
+  @@index([siteId])
+  @@map("Pages")
+}
+
+// 上傳檔案集中管理，包含各頁面上傳的附檔，也包含單獨檔案頁面的檔案
+model File {
+  id         Int      @id @default(autoincrement()) @map("ID")
+  name       String   @map("Name")
+  path       String   @map("Path")
+  uploadedBy Int?     @map("UploadedBy")
+  uploadedAt DateTime @default(now()) @map("UploadedAt")
+  pages      Page[]   @relation("PageFiles")
+
+  // 關聯到 Site
+  siteId Int?  @map("SiteID")
+  site   Site? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+  @@map("Files")
+}
+
+// 可以有的畫面呈現類型
+model ViewType {
+  id          Int     @id @default(autoincrement()) @map("ID")
+  name        String  @map("Name") @db.VarChar(50)
+  description String? @map("Description") @db.VarChar(255)
+
+  siteMenus SiteMenu[] @relation("SiteMenuViewType")
+
+  @@map("ViewTypes")
+}
