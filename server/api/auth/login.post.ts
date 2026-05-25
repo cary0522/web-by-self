@@ -1,4 +1,6 @@
+// /api/auth/login 登入
 import { prisma } from '../../utils/prisma'
+import bcrypt from 'bcrypt'
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
@@ -26,8 +28,9 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    // 檢查密碼（TODO: 實作密碼加密後需要用 bcrypt 比對）
-    if (user.password !== body.password) {
+    // 檢查密碼（使用 bcrypt 比對加密後的密碼）
+    const isPasswordValid = await bcrypt.compare(body.password, user.password)
+    if (!isPasswordValid) {
         throw createError({
             statusCode: 401,
             statusMessage: '帳號或密碼錯誤',
