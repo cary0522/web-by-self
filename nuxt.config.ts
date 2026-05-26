@@ -2,8 +2,16 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+
+  runtimeConfig: {
+    // 僅伺服器端可讀取，對應環境變數 NUXT_JWT_SECRET
+    jwtSecret: '',
+  },
   modules: [
     '@nuxtjs/tailwindcss',
+    '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
+    '@nuxt/eslint',
   ],
 
   // 後端設定
