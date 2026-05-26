@@ -1,6 +1,24 @@
 <script setup lang="ts">
+import Swal from 'sweetalert2'
+
+const adminStore = useAdminStore()
+const router = useRouter()
 
 // 取得所有管理頁籤，渲染側邊欄
+
+onMounted(() => {
+  if (!adminStore.isAdmin) {
+    Swal.fire({
+      icon: 'warning',
+      title: '請先登入',
+      timer: 1500,
+      showConfirmButton: false,
+    }).then(() => {
+      router.push('/user/login')
+    })
+  }
+  console.log('AdminStore:', adminStore)
+})
 </script>
 
 <template>
