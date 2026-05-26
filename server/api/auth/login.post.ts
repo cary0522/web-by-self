@@ -1,17 +1,17 @@
 // /api/auth/login 登入
-import { prisma } from '../../utils/prisma'
 import bcrypt from 'bcrypt'
+
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
     if (!body.account || !body.password) {
-        return {
-            success: false,
-            message: 'Username and password are required'
-        }
+        throw createError({
+            statusCode: 400,
+            statusMessage: '帳號與密碼為必填',
+        })
     }
 
-    // 查詢管理者（支援帳號或 email 登入）
+    // 查詢使用者（支援帳號或 email 登入）
     const user = await prisma.user.findFirst({
         where: {
             OR: [
@@ -37,7 +37,22 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    // 回傳使用者資料（不含密碼）
+    // 產生 JWT 並寫入 HTTP-only Cookie
+    const config = useRuntimeConfig(event)
+    const token = signToken(
+        { id: user.id, account: user.account, role: user.role },
+        config.jwtSecret,
+    )
+
+    setCookie(event, 'auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 60 * 60 * 24 * 7, // 7 天
+        path: '/',
+    })
+
+    // 回傳使用者資料（不含密碼與 token）
     return {
         id: user.id,
         account: user.account,
@@ -45,5 +60,4 @@ export default defineEventHandler(async (event) => {
         name: user.name,
         role: user.role,
     }
-
 })
