@@ -71,7 +71,7 @@ async function login() {
                     <input id="userPassword" type="password" placeholder="密碼" v-model="userData.password" class="border rounded px-1 py-1">
                 </label>
                 <div class="w-full my-2 flex justify-center items-center">
-                    <button @click="login" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">登入</button>
+                    <UiButton :clickFunction="login" title="登入" />
                 </div>
             </div>
         </div>

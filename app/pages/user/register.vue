@@ -62,8 +62,7 @@ async function Register() {
                         class="border rounded px-1 py-1">
                 </label>
                 <div class="w-full my-2 flex justify-center items-center">
-                    <button @click="Register"
-                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">註冊</button>
+                    <UiButton :clickFunction="Register" title="註冊" />
                 </div>
             </div>
         </div>

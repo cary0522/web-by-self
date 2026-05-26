@@ -44,14 +44,16 @@ function LogOut() {
             <h1 class="text-4xl font-bold w-full">管理者後台</h1>
             <div class="w-full px-2 flex">
                 <div class="w-1/6 border min-h-screen">選單
-                    <button @click="LogOut">登入</button>
+                    <UiButton :clickFunction="LogOut" title="登入" />
                 </div>
                 <div class="grow border min-h-screen">
                     <div>
                         <h3>
                             網站管理
                         </h3>
-                        <input type="text" v-model="siteName" placeholder="網站名稱" class="border p-1" />
+                        <input type="text" v-model="siteData.name" placeholder="網站名稱" class="border p-1" />
+                        <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
+                        <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
                     </div>
                     <div>
                         <h3>
