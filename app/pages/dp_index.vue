@@ -9,7 +9,11 @@ const router = useRouter()
 // 有網站資料之後，才能取得這個使用者所有後台頁籤
 // 頁籤:增刪修查api
 
-const siteName = ref('')
+const siteData = ref({
+    id: 0,
+    name: '',
+    domain: '',
+})
 const siteMenuData = ref({
     name: '',
     slug: '',
@@ -35,6 +39,99 @@ function LogOut() {
         })
     })
 }
+// 取得網站資訊
+async function GetSiteData() {
+    try {
+        const res = await $fetch<{ id: number, name: string, domain: string } | null>('/api/site')
+        if (res) {
+            siteData.value.name = res.name
+            siteData.value.domain = res.domain
+            siteData.value.id = res.id
+        } else {
+            siteData.value.name = ''
+            siteData.value.domain = ''
+            siteData.value.id = 0
+        }
+    }
+    catch (err: any) {
+        if (err.data?.statusCode === 401) {
+            router.push('/user/login')
+        }
+    }
+}
+// 新增網站資訊
+function CreateSite() {
+    if (!siteData.value.name) {
+        Swal.fire({
+            icon: 'warning',
+            title: '請填寫網站名稱',
+            text: '請輸入網站名稱',
+        })
+        return
+    }
+
+    $fetch('/api/site/create', {
+        method: 'POST',
+        body: {
+            name: siteData.value.name,
+            domain: siteData.value.domain,
+        },
+    }).then((res) => {
+        Swal.fire({
+            icon: 'success',
+            title: '網站建立成功',
+            timer: 1500,
+            showConfirmButton: false,
+        }).then(() => {
+            GetSiteData()
+        })
+    }).catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: '網站建立失敗',
+            text: err.data?.statusMessage || '網站建立失敗，請稍後再試',
+        })
+    })
+}
+// 更新網站資訊
+function UpdateSite() {
+    if (!siteData.value.name) {
+        Swal.fire({
+            icon: 'warning',
+            title: '請填寫網站名稱',
+            text: '請輸入網站名稱',
+        })
+        return
+    }
+
+    $fetch('/api/site/update', {
+        method: 'PUT' as any,
+        body: {
+            siteId: siteData.value.id,
+            name: siteData.value.name,
+            domain: siteData.value.domain,
+        }
+    }).then((res) => {
+        Swal.fire({
+            icon: 'success',
+            title: '網站更新成功',
+            timer: 1500,
+            showConfirmButton: false,
+        }).then(() => {
+            GetSiteData()
+        })
+    }).catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: '網站更新失敗',
+            text: err.data?.statusMessage || '網站更新失敗，請稍後再試',
+        })
+    })
+}
+
+onMounted(() => {
+    GetSiteData()
+})
 
 </script>
 
