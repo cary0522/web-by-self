@@ -31,3 +31,6 @@ graphify/
 graphify-out/
 *.graph.json
 **/graphify*
+
+# CodeGraph
+.codegraph/
