@@ -13,7 +13,8 @@ interface SiteMenu {
     id: number,
     name: string,
     slug: string,
-    viewType: string,
+    viewTypeId: number,
+}
 }
 
 const siteData = ref({
@@ -24,7 +25,7 @@ const siteData = ref({
 const siteMenuData = ref({
     name: '',
     slug: '',
-    viewType: '',
+    viewTypeId: 0,
 })
 const siteMenuList = ref<SiteMenu[]>([])
 
@@ -132,7 +133,7 @@ function UpdateSite() {
 }
 
 function UpdateSiteMenu() {
-    if (!siteMenuData.value.name || !siteMenuData.value.slug || !siteMenuData.value.viewTypeId) {
+    if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
         Swal.fire({
             icon: 'warning',
             title: '請填寫頁籤資訊',
@@ -166,7 +167,7 @@ function UpdateSiteMenu() {
     })
 }
 function CreateSiteMenu() {
-    if (!siteMenuData.value.name || !siteMenuData.value.slug || !siteMenuData.value.viewTypeId) {
+    if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
         Swal.fire({
             icon: 'warning',
             title: '請填寫頁籤資訊',

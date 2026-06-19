@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
             statusMessage: '網站 slug 為必填',
         })
     }
-    if (!body.viewTypeId) {
+    if (body.viewTypeId == 0) {
         throw createError({
             statusCode: 400,
             statusMessage: '網站 viewType 為必填',
