@@ -15,6 +15,11 @@ interface SiteMenu {
     slug: string,
     viewTypeId: number,
 }
+
+interface ViewType {
+    id: number,
+    name: string,
+    description: string,
 }
 
 const siteData = ref({
@@ -200,9 +205,16 @@ function CreateSiteMenu() {
         })
     })
 }
+const viewTypeOptions = ref<ViewType[]>([])
+// 取得viewType選項
+async function GetViewTypeOptions() {
+    const res = await $fetch('/api/viewtype/get-option')
+    viewTypeOptions.value = res as ViewType[]
+}
 
 onMounted(() => {
     GetSiteData()
+    GetViewTypeOptions()
 })
 
 </script>
@@ -233,13 +245,20 @@ onMounted(() => {
                             class="flex items-center">
                             <p>{{ menu.name }}</p>
                             <p>{{ menu.slug }}</p>
-                            <p>{{ menu.viewType }}</p>
+                            <select name="viewType" id="viewType" v-model="menu.viewTypeId" disabled>
+                                <option v-for="option in viewTypeOptions" :key="option.id" :value="option.id">
+                                    {{ option.name }}
+                                </option>
+                            </select>
                             <UiButton :clickFunction="UpdateSiteMenu" title="更新" />
                         </div>
                         <input type="text" v-model="siteMenuData.name" placeholder="頁籤名稱" class="border p-1" />
                         <input type="text" v-model="siteMenuData.slug" placeholder="頁籤slug" class="border p-1" />
-                        <input type="text" v-model="siteMenuData.viewTypeId" placeholder="頁籤view type"
-                            class="border p-1" />
+                        <select name="viewType" id="viewType" v-model="siteMenuData.viewTypeId">
+                            <option v-for="option in viewTypeOptions" :key="option.id" :value="option.id">
+                                {{ option.name }}
+                            </option>
+                        </select>
                         <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
                     </div>
                 </div>
