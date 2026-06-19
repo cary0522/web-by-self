@@ -39,6 +39,19 @@ async function Register() {
         })
     })
 }
+// 健康檢查
+function CheckApi() {
+    $fetch('/api/check').catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: err.statusMessage
+        })
+    })
+}
+
+onMounted(() => {
+    CheckApi()
+})
 </script>
 
 <template>
