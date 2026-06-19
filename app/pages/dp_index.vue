@@ -9,6 +9,13 @@ const router = useRouter()
 // 有網站資料之後，才能取得這個使用者所有後台頁籤
 // 頁籤:增刪修查api
 
+interface SiteMenu {
+    id: number,
+    name: string,
+    slug: string,
+    viewType: string,
+}
+
 const siteData = ref({
     id: 0,
     name: '',
@@ -19,13 +26,7 @@ const siteMenuData = ref({
     slug: '',
     viewType: '',
 })
-const siteMenuList = ref([
-    {
-        name: '',
-        slug: '',
-        viewType: '',
-    },
-])
+const siteMenuList = ref<SiteMenu[]>([])
 
 function LogOut() {
     adminStore.logOut().then(() => {
@@ -47,6 +48,9 @@ async function GetSiteData() {
             siteData.value.name = res.name
             siteData.value.domain = res.domain
             siteData.value.id = res.id
+            // 取得網站的頁籤資訊
+            const menuRes = await $fetch<SiteMenu[]>(`/api/siteMenu/${res.id}`)
+            siteMenuList.value = menuRes
         } else {
             siteData.value.name = ''
             siteData.value.domain = ''
@@ -80,8 +84,7 @@ function CreateSite() {
         Swal.fire({
             icon: 'success',
             title: '網站建立成功',
-            timer: 1500,
-            showConfirmButton: false,
+            confirmButtonText: '確定',
         }).then(() => {
             GetSiteData()
         })
@@ -115,8 +118,7 @@ function UpdateSite() {
         Swal.fire({
             icon: 'success',
             title: '網站更新成功',
-            timer: 1500,
-            showConfirmButton: false,
+            confirmButtonText: '確定',
         }).then(() => {
             GetSiteData()
         })
@@ -125,6 +127,75 @@ function UpdateSite() {
             icon: 'error',
             title: '網站更新失敗',
             text: err.data?.statusMessage || '網站更新失敗，請稍後再試',
+        })
+    })
+}
+
+function UpdateSiteMenu() {
+    if (!siteMenuData.value.name || !siteMenuData.value.slug || !siteMenuData.value.viewTypeId) {
+        Swal.fire({
+            icon: 'warning',
+            title: '請填寫頁籤資訊',
+            text: '請輸入頁籤名稱、slug、view type',
+        })
+        return
+    }
+
+    $fetch('/api/siteMenu/update', {
+        method: 'PUT' as any,
+        body: {
+            siteId: siteData.value.id,
+            name: siteMenuData.value.name,
+            slug: siteMenuData.value.slug,
+            viewTypeId: siteMenuData.value.viewTypeId,
+        }
+    }).then((res) => {
+        Swal.fire({
+            icon: 'success',
+            title: '頁籤更新成功',
+            confirmButtonText: '確定',
+        }).then(() => {
+            GetSiteData()
+        })
+    }).catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: '頁籤更新失敗',
+            text: err.data?.statusMessage || '頁籤更新失敗，請稍後再試',
+        })
+    })
+}
+function CreateSiteMenu() {
+    if (!siteMenuData.value.name || !siteMenuData.value.slug || !siteMenuData.value.viewTypeId) {
+        Swal.fire({
+            icon: 'warning',
+            title: '請填寫頁籤資訊',
+            text: '請輸入頁籤名稱、slug、view type',
+        })
+        return
+    }
+
+    $fetch('/api/siteMenu/create', {
+        method: 'POST',
+        body: {
+            siteId: siteData.value.id,
+            name: siteMenuData.value.name,
+            slug: siteMenuData.value.slug,
+            viewTypeId: siteMenuData.value.viewTypeId,
+        }
+    }).then((res) => {
+        Swal.fire({
+            icon: 'success',
+            title: '頁籤建立成功',
+            confirmButtonText: '確定',
+        }).then(() => {
+            GetSiteData()
+        })
+    }).catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: '頁籤建立失敗',
+            text: err.data?.statusMessage || '頁籤建立失敗，請稍後再試',
         })
     })
 }
@@ -149,22 +220,26 @@ onMounted(() => {
                             網站管理
                         </h3>
                         <input type="text" v-model="siteData.name" placeholder="網站名稱" class="border p-1" />
+                        <input type="text" v-model="siteData.domain" placeholder="網站域名" class="border p-1" />
                         <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
                         <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
                     </div>
-                    <div>
+                    <div v-if="siteData.id !== 0">
                         <h3>
                             頁籤管理
                         </h3>
-                        <div v-for="menu in siteMenuList" :key="menu.slug" class="flex items-center">
+                        <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
+                            class="flex items-center">
                             <p>{{ menu.name }}</p>
                             <p>{{ menu.slug }}</p>
                             <p>{{ menu.viewType }}</p>
+                            <UiButton :clickFunction="UpdateSiteMenu" title="更新" />
                         </div>
                         <input type="text" v-model="siteMenuData.name" placeholder="頁籤名稱" class="border p-1" />
                         <input type="text" v-model="siteMenuData.slug" placeholder="頁籤slug" class="border p-1" />
-                        <input type="text" v-model="siteMenuData.viewType" placeholder="頁籤view type"
+                        <input type="text" v-model="siteMenuData.viewTypeId" placeholder="頁籤view type"
                             class="border p-1" />
+                        <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
                     </div>
                 </div>
             </div>
