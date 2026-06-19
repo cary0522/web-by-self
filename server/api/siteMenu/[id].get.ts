@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
             slug: true,
             viewTypeRelation: {
                 select: {
-                    name: true,
+                    id: true,
                 },
             },
         },
@@ -27,6 +27,6 @@ export default defineEventHandler(async (event) => {
         id: menu.id,
         name: menu.name,
         slug: menu.slug,
-        viewType: menu.viewTypeRelation?.name ?? '',
+        viewTypeId: menu.viewTypeRelation?.id ?? 0,
     }))
 })
