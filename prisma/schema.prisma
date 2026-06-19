@@ -64,12 +64,15 @@ model SiteMenu {
   name String @db.VarChar(200)
   slug String @db.VarChar(200)
 
-  viewTypeId Int?   // FK to ViewType.id
+  viewTypeId Int? // FK to ViewType.id
 
   icon      String? @db.VarChar(100)
   sortOrder Int     @default(0)
   isEnabled Boolean @default(true)
   isParent  Boolean @default(false) // 根據是否有子菜單來設定
+
+  url    String? @db.VarChar(500) // 外部連結用
+  target String? @db.VarChar(20) // _self / _blank
 
   createdById Int?
   createdAt   DateTime @default(now())
@@ -115,9 +118,10 @@ model Page {
   updatedAt DateTime @updatedAt @map("UpdatedAt")
 
   // 關聯到 Site
-  siteId Int?       @map("SiteID")
-  site   Site?      @relation(fields: [siteId], references: [id], onDelete: SetNull)
-  menus  SiteMenu[]
+  siteId   Int           @map("SiteID")
+  site     Site          @relation(fields: [siteId], references: [id])
+  menus    SiteMenu[]
+  sections PageSection[]
 
   @@index([siteId])
   @@map("Pages")
@@ -133,8 +137,8 @@ model File {
   pages      Page[]   @relation("PageFiles")
 
   // 關聯到 Site
-  siteId Int?  @map("SiteID")
-  site   Site? @relation(fields: [siteId], references: [id], onDelete: SetNull)
+  siteId Int  @map("SiteID")
+  site   Site @relation(fields: [siteId], references: [id])
 
   @@index([siteId])
   @@map("Files")
@@ -143,10 +147,31 @@ model File {
 // 可以有的畫面呈現類型
 model ViewType {
   id          Int     @id @default(autoincrement()) @map("ID")
-  name        String  @map("Name") @db.VarChar(50)
+  name        String  @unique @map("Name") @db.VarChar(50)
   description String? @map("Description") @db.VarChar(255)
 
   siteMenus SiteMenu[] @relation("SiteMenuViewType")
 
   @@map("ViewTypes")
+}
+
+// page的畫面分布，目前提供給home使用
+model PageSection {
+  id     Int @id @default(autoincrement()) @map("ID")
+  pageId Int @map("PageID")
+
+  type     String  @map("Type") @db.VarChar(50)
+  title    String? @map("Title") @db.VarChar(200)
+  bodyJson Json?   @map("BodyJson")
+
+  sortOrder Int     @default(0) @map("SortOrder")
+  isEnabled Boolean @default(true) @map("IsEnabled")
+
+  createdAt DateTime @default(now()) @map("CreatedAt")
+  updatedAt DateTime @updatedAt @map("UpdatedAt")
+
+  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId])
+  @@map("PageSections")
 }
