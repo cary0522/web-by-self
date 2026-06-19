@@ -224,8 +224,10 @@ onMounted(() => {
         <div class="h-screen">
             <h1 class="text-4xl font-bold w-full">管理者後台</h1>
             <div class="w-full px-2 flex">
-                <div class="w-1/6 border min-h-screen">選單
-                    <UiButton :clickFunction="LogOut" title="登入" />
+                <div class="w-1/6 border min-h-screen flex flex-col">
+                    <p class="text-lg font-black ms-1">選單</p>
+                    <NuxtLink v-for="menu in siteMenuList" :key="menu.id" :to="`/setting/${menu.slug}`" class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all">{{ menu.name }}</NuxtLink>
+                    <UiButton :clickFunction="LogOut" title="登出" class="my-2" />
                 </div>
                 <div class="grow border min-h-screen">
                     <div>
