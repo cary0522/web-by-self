@@ -1,39 +1,41 @@
 <script setup lang="ts">
 import Swal from 'sweetalert2';
-import { ref } from 'vue';
+import type { SiteMenu } from '~/types/site-menu';
 
 const adminStore = useAdminStore()
 const router = useRouter()
-// 取得這個網站的資料
-// 網站資料:增刪修查api
-// 有網站資料之後，才能取得這個使用者所有後台頁籤
-// 頁籤:增刪修查api
-
-interface SiteMenu {
-    id: number,
-    name: string,
-    slug: string,
-    viewTypeId: number,
-}
-
-interface ViewType {
-    id: number,
-    name: string,
-    description: string,
-}
-
+// 網站資料
 const siteData = ref({
     id: 0,
     name: '',
     domain: '',
 })
-const siteMenuData = ref({
+// 單筆頁籤資料
+const siteMenuData = ref<SiteMenu>({
+    id: 0,
     name: '',
     slug: '',
     viewTypeId: 0,
+    parentId: null,
+    subPage: []
 })
+// 清空頁籤資料
+function ResetSiteMenuData() {
+    siteMenuData.value = {
+        id: 0,
+        name: '',
+        slug: '',
+        viewTypeId: 0,
+        parentId: null,
+        subPage: []
+    }
+}
+// 所有頁籤資料
 const siteMenuList = ref<SiteMenu[]>([])
+// 所有父頁籤資料
+const parentList = computed(() => siteMenuList.value.filter(menu => menu.viewTypeId == 4))
 
+// 登出
 function LogOut() {
     adminStore.logOut().then(() => {
         Swal.fire({
@@ -112,7 +114,6 @@ function UpdateSite() {
         })
         return
     }
-
     $fetch('/api/site/update', {
         method: 'PUT' as any,
         body: {
@@ -136,7 +137,7 @@ function UpdateSite() {
         })
     })
 }
-
+// 更新頁籤資料
 function UpdateSiteMenu() {
     if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
         Swal.fire({
@@ -146,7 +147,6 @@ function UpdateSiteMenu() {
         })
         return
     }
-
     $fetch('/api/siteMenu/update', {
         method: 'PUT' as any,
         body: {
@@ -154,6 +154,7 @@ function UpdateSiteMenu() {
             name: siteMenuData.value.name,
             slug: siteMenuData.value.slug,
             viewTypeId: siteMenuData.value.viewTypeId,
+            parentId: siteMenuData.value.parentId,
         }
     }).then((res) => {
         Swal.fire({
@@ -162,6 +163,7 @@ function UpdateSiteMenu() {
             confirmButtonText: '確定',
         }).then(() => {
             GetSiteData()
+            ResetSiteMenuData()
         })
     }).catch((err) => {
         Swal.fire({
@@ -171,6 +173,7 @@ function UpdateSiteMenu() {
         })
     })
 }
+// 新增頁籤資料
 function CreateSiteMenu() {
     if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
         Swal.fire({
@@ -180,7 +183,6 @@ function CreateSiteMenu() {
         })
         return
     }
-
     $fetch('/api/siteMenu/create', {
         method: 'POST',
         body: {
@@ -188,6 +190,7 @@ function CreateSiteMenu() {
             name: siteMenuData.value.name,
             slug: siteMenuData.value.slug,
             viewTypeId: siteMenuData.value.viewTypeId,
+            parentId: siteMenuData.value.parentId,
         }
     }).then((res) => {
         Swal.fire({
@@ -196,6 +199,7 @@ function CreateSiteMenu() {
             confirmButtonText: '確定',
         }).then(() => {
             GetSiteData()
+            ResetSiteMenuData()
         })
     }).catch((err) => {
         Swal.fire({
@@ -205,16 +209,9 @@ function CreateSiteMenu() {
         })
     })
 }
-const viewTypeOptions = ref<ViewType[]>([])
-// 取得viewType選項
-async function GetViewTypeOptions() {
-    const res = await $fetch('/api/viewtype/get-option')
-    viewTypeOptions.value = res as ViewType[]
-}
 
 onMounted(() => {
     GetSiteData()
-    GetViewTypeOptions()
 })
 
 </script>
@@ -224,44 +221,67 @@ onMounted(() => {
         <div class="h-screen">
             <h1 class="text-4xl font-bold w-full">管理者後台</h1>
             <div class="w-full px-2 flex">
-                <div class="w-1/6 border min-h-screen flex flex-col">
+                <div class="w-1/5 border min-h-screen flex flex-col">
                     <p class="text-lg font-black ms-1">選單</p>
-                    <NuxtLink v-for="menu in siteMenuList" :key="menu.id" :to="`/setting/${menu.slug}`" class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all">{{ menu.name }}</NuxtLink>
+                    <template v-for="menu in siteMenuList">
+                        <NuxtLink :to="menu.viewTypeId == 4 ? '' : `/setting${menu.slug}`"
+                            class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
+                            {{
+                                menu.name }}
+                        </NuxtLink>
+                        <NuxtLink v-for="subPage in menu.subPage" :key="subPage.id" :to="`/setting${subPage.slug}`"
+                            class="my-2 ms-4 hover:text-black hover:underline hover:scale-105 transition-all">{{
+                                subPage.name }}
+                        </NuxtLink>
+                    </template>
                     <UiButton :clickFunction="LogOut" title="登出" class="my-2" />
                 </div>
                 <div class="grow border min-h-screen">
                     <div>
-                        <h3>
-                            網站管理
-                        </h3>
-                        <input type="text" v-model="siteData.name" placeholder="網站名稱" class="border p-1" />
-                        <input type="text" v-model="siteData.domain" placeholder="網站域名" class="border p-1" />
-                        <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
-                        <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
+                        <UiAreaTitle :title="'網站管理'"> </UiAreaTitle>
+                        <div class="w-full ps-4">
+                            <div class="my-1">
+                                <label for="siteName">網站名稱：</label>
+                                <input type="text" id="siteName" v-model="siteData.name" placeholder="網站名稱" />
+                            </div>
+                            <div class="my-1">
+                                <label for="siteDomain">網站域名：</label>
+                                <input type="text" id="siteDomain" v-model="siteData.domain" placeholder="網站域名" />
+                            </div>
+                        </div>
+                        <div class="w-full flex justify-center items-center">
+                            <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
+                            <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
+                        </div>
                     </div>
                     <div v-if="siteData.id !== 0">
-                        <h3>
-                            頁籤管理
-                        </h3>
+                        <UiAreaTitle :title="'頁籤管理'"> </UiAreaTitle>
                         <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
-                            class="flex items-center">
-                            <p>{{ menu.name }}</p>
-                            <p>{{ menu.slug }}</p>
-                            <select name="viewType" id="viewType" v-model="menu.viewTypeId" disabled>
-                                <option v-for="option in viewTypeOptions" :key="option.id" :value="option.id">
+                            class="flex flex-wrap items-center">
+                            <UiSiteMenu :data="menu"></UiSiteMenu>
+                            <UiButton :clickFunction="UpdateSiteMenu" title="更新" />
+                            <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
+                                <UiSiteMenu :data="sub"></UiSiteMenu>
+                                <label for="parentPage">父頁籤：</label>
+                                <select name="parentPage" id="parentPage" v-model="sub.parentId">
+                                    <option v-for="option in parentList" :key="option.id" :value="option.id">
+                                        {{ option.name }}
+                                    </option>
+                                </select>
+                                <UiButton :clickFunction="UpdateSiteMenu" title="更新子頁籤" />
+                            </div>
+                        </div>
+                        <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
+                        <div class="w-full flex">
+                            <UiSiteMenu :data="siteMenuData"></UiSiteMenu>
+                            <select name="parent" id="parent" v-model="siteMenuData.parentId"
+                                v-if="siteMenuData.viewTypeId !== 4">
+                                <option v-for="option in parentList" :key="option.id" :value="option.id">
                                     {{ option.name }}
                                 </option>
                             </select>
-                            <UiButton :clickFunction="UpdateSiteMenu" title="更新" />
+                            <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
                         </div>
-                        <input type="text" v-model="siteMenuData.name" placeholder="頁籤名稱" class="border p-1" />
-                        <input type="text" v-model="siteMenuData.slug" placeholder="頁籤slug" class="border p-1" />
-                        <select name="viewType" id="viewType" v-model="siteMenuData.viewTypeId">
-                            <option v-for="option in viewTypeOptions" :key="option.id" :value="option.id">
-                                {{ option.name }}
-                            </option>
-                        </select>
-                        <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
                     </div>
                 </div>
             </div>
