@@ -54,47 +54,7 @@ model Site {
   @@map("Sites")
 }
 
-// SiteMenu - 網站菜單，包含菜單名稱、路由、類型、目標等資訊，使用 siteId 和 routePath 作為唯一識別，方便前台路由使用
-model SiteMenu {
-  id       Int  @id @default(autoincrement())
-  siteId   Int
-  parentId Int? // 用於多層級菜單結構
-  pageId   Int? // 關聯到 Page，當 viewType 是 page 時使用
 
-  name String @db.VarChar(200)
-  slug String @db.VarChar(200)
-
-  viewTypeId Int? // FK to ViewType.id
-
-  icon      String? @db.VarChar(100)
-  sortOrder Int     @default(0)
-  isEnabled Boolean @default(true)
-  isParent  Boolean @default(false) // 根據是否有子菜單來設定
-
-  url    String? @db.VarChar(500) // 外部連結用
-  target String? @db.VarChar(20) // _self / _blank
-
-  createdById Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isDeleted   Boolean  @default(false)
-
-  site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  parent   SiteMenu?  @relation("SiteMenuToSiteMenu", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  children SiteMenu[] @relation("SiteMenuToSiteMenu")
-
-  page      Page? @relation(fields: [pageId], references: [id], onDelete: SetNull)
-  createdBy User? @relation("SiteMenuCreatedBy", fields: [createdById], references: [id])
-
-  viewTypeRelation ViewType? @relation("SiteMenuViewType", fields: [viewTypeId], references: [id], onDelete: SetNull)
-
-  @@index([siteId])
-  @@index([parentId])
-  @@index([pageId])
-  @@index([createdById])
-  @@index([isDeleted])
-  @@map("SiteMenus")
-}
 
 // 各頁面內容，包含標題、內容、狀態等，使用 slug 作為唯一識別，方便前台路由使用
 model Page {
@@ -120,7 +80,8 @@ model Page {
   // 關聯到 Site
   siteId   Int           @map("SiteID")
   site     Site          @relation(fields: [siteId], references: [id])
-  menus    SiteMenu[]
+  // 一筆 Page 對應一筆 SiteMenu（page/pdf 類型由頁籤建立）
+  siteMenu SiteMenu?     @relation("SiteMenuPage")
   sections PageSection[]
 
   @@index([siteId])
@@ -174,4 +135,44 @@ model PageSection {
 
   @@index([pageId])
   @@map("PageSections")
+}
+// SiteMenu - 網站菜單，包含菜單名稱、路由、類型、目標等資訊，使用 siteId 和 routePath 作為唯一識別，方便前台路由使用
+model SiteMenu {
+  id       Int  @id @default(autoincrement())
+  siteId   Int
+  parentId Int? // 用於多層級菜單結構
+  pageId   Int? @unique // 關聯到 Page，當 viewType 是 page 時使用
+
+  name String @db.VarChar(200)
+  slug String @db.VarChar(200)
+
+  viewTypeId Int? // FK to ViewType.id
+
+  icon      String? @db.VarChar(100)
+  sortOrder Int     @default(0)
+  isEnabled Boolean @default(true)
+  isParent  Boolean @default(false) // 根據是否有子菜單來設定
+
+  url    String? @db.VarChar(500) // 外部連結用
+  target String? @db.VarChar(20) // _self / _blank
+
+  createdById Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
+
+  site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  parent   SiteMenu?  @relation("SiteMenuToSiteMenu", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children SiteMenu[] @relation("SiteMenuToSiteMenu")
+
+  page      Page? @relation("SiteMenuPage", fields: [pageId], references: [id], onDelete: SetNull)
+  createdBy User? @relation("SiteMenuCreatedBy", fields: [createdById], references: [id])
+
+  viewTypeRelation ViewType? @relation("SiteMenuViewType", fields: [viewTypeId], references: [id], onDelete: SetNull)
+
+  @@index([siteId])
+  @@index([parentId])
+  @@index([createdById])
+  @@index([isDeleted])
+  @@map("SiteMenus")
 }
