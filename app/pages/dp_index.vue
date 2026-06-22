@@ -138,8 +138,8 @@ function UpdateSite() {
     })
 }
 // 更新頁籤資料
-function UpdateSiteMenu() {
-    if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
+function UpdateSiteMenu(menu: SiteMenu) {
+    if (!menu.name || !menu.slug || menu.viewTypeId == 0) {
         Swal.fire({
             icon: 'warning',
             title: '請填寫頁籤資訊',
@@ -150,11 +150,12 @@ function UpdateSiteMenu() {
     $fetch('/api/siteMenu/update', {
         method: 'PUT' as any,
         body: {
+            menuId: menu.id,
             siteId: siteData.value.id,
-            name: siteMenuData.value.name,
-            slug: siteMenuData.value.slug,
-            viewTypeId: siteMenuData.value.viewTypeId,
-            parentId: siteMenuData.value.parentId,
+            name: menu.name,
+            slug: menu.slug,
+            viewTypeId: menu.viewTypeId,
+            parentId: menu.parentId,
         }
     }).then((res) => {
         Swal.fire({
@@ -259,7 +260,7 @@ onMounted(() => {
                         <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
                             class="flex flex-wrap items-center">
                             <UiSiteMenu :data="menu"></UiSiteMenu>
-                            <UiButton :clickFunction="UpdateSiteMenu" title="更新" />
+                            <UiButton :clickFunction="() => UpdateSiteMenu(menu)" title="更新" />
                             <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
                                 <UiSiteMenu :data="sub"></UiSiteMenu>
                                 <label for="parentPage">父頁籤：</label>
@@ -268,7 +269,7 @@ onMounted(() => {
                                         {{ option.name }}
                                     </option>
                                 </select>
-                                <UiButton :clickFunction="UpdateSiteMenu" title="更新子頁籤" />
+                                <UiButton :clickFunction="() => UpdateSiteMenu(sub)" title="更新子頁籤" />
                             </div>
                         </div>
                         <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
