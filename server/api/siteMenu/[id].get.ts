@@ -20,13 +20,23 @@ export default defineEventHandler(async (event) => {
                     id: true,
                 },
             },
+            parentId: true
         },
     })
 
-    return siteMenus.map(menu => ({
+    return siteMenus.filter(menu => (
+        menu.viewTypeRelation?.id == 4 || menu.viewTypeRelation?.id == 2
+    )).map(menu => ({
         id: menu.id,
         name: menu.name,
         slug: menu.slug,
         viewTypeId: menu.viewTypeRelation?.id ?? 0,
+        subPage: siteMenus.filter(subMenu => subMenu.parentId == menu.id).map(subMenu => ({
+            id: subMenu.id,
+            name: subMenu.name,
+            slug: subMenu.slug,
+            viewTypeId: subMenu.viewTypeRelation?.id ?? 0,
+            parentId: subMenu.parentId,
+        }))
     }))
 })
