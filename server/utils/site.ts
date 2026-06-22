@@ -29,6 +29,7 @@ export async function getSiteMenusBySiteId(siteId: number) {
       id: true,
       name: true,
       slug: true,
+      pageId: true,
       viewTypeRelation: {
         select: {
           id: true,

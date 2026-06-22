@@ -13,11 +13,13 @@ export default defineEventHandler(async (event) => {
         id: menu.id,
         name: menu.name,
         slug: menu.slug,
+        pageId: menu.pageId,
         viewTypeId: menu.viewTypeRelation?.id ?? 0,
         subPage: siteMenus.filter(subMenu => subMenu.parentId == menu.id).map(subMenu => ({
             id: subMenu.id,
             name: subMenu.name,
             slug: subMenu.slug,
+            pageId: subMenu.pageId,
             viewTypeId: subMenu.viewTypeRelation?.id ?? 0,
             parentId: subMenu.parentId,
         }))
