@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
             slug: body.slug,
             viewTypeId: body.viewTypeId,
             siteId: body.siteId,
+            parentId: body.parentId,
             createdById: authUser.id,
         },
     })
@@ -38,5 +39,6 @@ export default defineEventHandler(async (event) => {
         name: res.name,
         slug: res.slug,
         viewTypeId: res.viewTypeId,
+        parentId:res.parentId
     }
 })
