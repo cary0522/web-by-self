@@ -8,6 +8,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // 僅伺服器端可讀取，對應環境變數 NUXT_JWT_SECRET
     jwtSecret: '',
+    public: {
+      siteUrl: '',
+    },
   },
   modules: [
     '@nuxtjs/tailwindcss',
