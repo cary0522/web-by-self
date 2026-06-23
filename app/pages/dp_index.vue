@@ -10,6 +10,8 @@ const siteData = ref({
     name: '',
     domain: '',
 })
+const siteRouteDomain = computed(() => siteData.value.domain.replace(/^\/+/, ''))
+const normalizeSlug = (value: string) => value.startsWith('/') ? value : `/${value}`
 // 單筆頁籤資料
 const siteMenuData = ref<SiteMenu>({
     id: 0,
@@ -225,12 +227,12 @@ onMounted(() => {
                 <div class="w-1/5 border min-h-screen flex flex-col">
                     <p class="text-lg font-black ms-1">選單</p>
                     <template v-for="menu in siteMenuList">
-                        <NuxtLink :to="menu.viewTypeId == 4 ? '' : `/setting${menu.slug}`"
+                        <NuxtLink :to="menu.viewTypeId == 4 ? '' : `/${siteRouteDomain}/setting${normalizeSlug(menu.slug)}`"
                             class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
                             {{
                                 menu.name }}
                         </NuxtLink>
-                        <NuxtLink v-for="subPage in menu.subPage" :key="subPage.id" :to="`/setting${subPage.slug}`"
+                        <NuxtLink v-for="subPage in menu.subPage" :key="subPage.id" :to="`/${siteRouteDomain}/setting${normalizeSlug(subPage.slug)}`"
                             class="my-2 ms-4 hover:text-black hover:underline hover:scale-105 transition-all">{{
                                 subPage.name }}
                         </NuxtLink>
