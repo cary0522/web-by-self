@@ -12,10 +12,14 @@
     "lint:fix": "eslint . --fix"
   },
   "dependencies": {
+    "@ckeditor/ckeditor5-image": "^48.2.0",
+    "@ckeditor/ckeditor5-vue": "^8.1.1",
     "@pinia/nuxt": "^0.11.3",
     "@prisma/adapter-mariadb": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "bcrypt": "^6.0.0",
+    "ckeditor5": "^48.2.0",
+    "ckeditor5-premium-features": "^48.2.0",
     "jsonwebtoken": "^9.0.3",
     "mariadb": "^3.5.2",
     "nuxt": "^4.4.6",
