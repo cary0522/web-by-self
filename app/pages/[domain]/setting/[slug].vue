@@ -126,23 +126,17 @@ onMounted(async () => {
 </script>
 
 <template>
-    <LayoutAdmin>
-        <div class="px-4 py-2 text-sm text-gray-500">
-            {{ domain }} / {{ slug }}
+    <LayoutAdmin :siteRouteDomain="String(domain)">
+        <div class="wrap">
+            <div class="px-4 py-2 text-sm text-gray-500">
+                {{ domain }} / {{ slug }}
+            </div>
+            <ClientOnly>
+                <Ckeditor v-if="editor && editorConfig" :editor="editor" v-model="editorData" :config="editorConfig" />
+                <template #fallback>
+                    <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
+                </template>
+            </ClientOnly>
         </div>
-        <ClientOnly>
-            <Ckeditor
-                v-if="editor && editorConfig"
-                :editor="editor"
-                v-model="editorData"
-                :config="editorConfig"
-            />
-            <template #fallback>
-                <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
-            </template>
-        </ClientOnly>
     </LayoutAdmin>
 </template>
-
-
-
