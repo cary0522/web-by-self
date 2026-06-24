@@ -8,9 +8,8 @@ interface PageContent {
 }
 
 const route = useRoute()
-const domain = Array.isArray(route.params.domain) ? route.params.domain[0] : String(route.params.domain || '')
-const slug = Array.isArray(route.params.slug) ? route.params.slug[0] : String(route.params.slug || '')
-
+const domain = route.params.domain || ''
+const slug = route.params.slug || ''
 const editor = shallowRef<any>(null)
 const editorConfig = shallowRef<Record<string, any> | null>(null)
 const editorData = ref('')
