@@ -1,6 +1,13 @@
 input,
-select{
+select {
   border: 2px solid gray !important;
   border-radius: 5px;
   padding: 5px;
+}
+
+.wrap {
+  width: fit-content;
+  flex-grow: initial;
+  padding: 0.5rem;
+  min-height: 100vh;
 }
