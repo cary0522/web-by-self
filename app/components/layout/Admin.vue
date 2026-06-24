@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import Swal from 'sweetalert2'
 import useSiteData from '~/composables/useSiteData';
+import { VIEW_TYPE } from '~/utils/enums'
 const { siteMenuList, GetSiteData } = useSiteData()
 
 const adminStore = useAdminStore()
@@ -49,11 +50,11 @@ onMounted(() => {
     <div class="w-1/5 border min-h-screen flex flex-col px-2 py-2">
       <p class="text-lg font-black ms-1">選單</p>
       <template v-for="menu in siteMenuList">
-        <NuxtLink v-if="menu.viewTypeId == 2" :to="`/`"
+        <NuxtLink v-if="menu.viewType === VIEW_TYPE.HOME" :to="`/`"
           class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
           {{ menu.name }}
         </NuxtLink>
-        <NuxtLink v-else-if="menu.viewTypeId == 4" :to="`/${props.siteRouteDomain}/setting${normalizeSlug(menu.slug)}`"
+        <NuxtLink v-else-if="menu.viewType === VIEW_TYPE.PARENT" :to="`/${props.siteRouteDomain}/setting${normalizeSlug(menu.slug)}`"
           class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
           {{ menu.name }}
         </NuxtLink>

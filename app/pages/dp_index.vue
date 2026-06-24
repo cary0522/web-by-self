@@ -2,7 +2,10 @@
 import Swal from 'sweetalert2';
 import type { SiteMenu } from '~/types/site-menu';
 import useSiteData from '~/composables/useSiteData';
+import useOptions from '~/composables/useOptions'
+import { VIEW_TYPE } from '~/utils/enums'
 const { siteData, siteMenuList, GetSiteData } = useSiteData()
+const { ViewTypeList, GetViewTypeList } = useOptions()
 
 const siteRouteDomain = computed(() => siteData.value.domain.replace(/^\/+/, ''))
 // 單筆頁籤資料
@@ -26,7 +29,11 @@ function ResetSiteMenuData() {
     }
 }
 // 所有父頁籤資料
-const parentList = computed(() => siteMenuList.value.filter(menu => menu.viewTypeId == 4))
+const parentList = computed(() => siteMenuList.value.filter(menu => menu.viewType === VIEW_TYPE.PARENT))
+
+const isParent = (id: number) => {
+    return ViewTypeList.value.find(v => v.id === id)?.name === VIEW_TYPE.PARENT
+}
 
 // 新增網站資訊
 function CreateSite() {
@@ -170,6 +177,7 @@ function CreateSiteMenu() {
 
 onMounted(() => {
     GetSiteData()
+    GetViewTypeList()
 })
 
 </script>
@@ -218,7 +226,7 @@ onMounted(() => {
                         <div class="w-full flex">
                             <UiSiteMenu :data="siteMenuData"></UiSiteMenu>
                             <select name="parent" id="parent" v-model="siteMenuData.parentId"
-                                v-if="siteMenuData.viewTypeId !== 4">
+                                v-if="!isParent(siteMenuData.viewTypeId)">
                                 <option v-for="option in parentList" :key="option.id" :value="option.id">
                                     {{ option.name }}
                                 </option>

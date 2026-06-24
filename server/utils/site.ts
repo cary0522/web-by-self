@@ -33,6 +33,7 @@ export async function getSiteMenusBySiteId(siteId: number) {
       viewTypeRelation: {
         select: {
           id: true,
+          name: true,
         },
       },
       parentId: true,
