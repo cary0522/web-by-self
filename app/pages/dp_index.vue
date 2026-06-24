@@ -1,17 +1,10 @@
 <script setup lang="ts">
 import Swal from 'sweetalert2';
 import type { SiteMenu } from '~/types/site-menu';
+import useSiteData from '~/composables/useSiteData';
+const { siteData, siteMenuList, GetSiteData } = useSiteData()
 
-const adminStore = useAdminStore()
-const router = useRouter()
-// 網站資料
-const siteData = ref({
-    id: 0,
-    name: '',
-    domain: '',
-})
 const siteRouteDomain = computed(() => siteData.value.domain.replace(/^\/+/, ''))
-const normalizeSlug = (value: string) => value.startsWith('/') ? value : `/${value}`
 // 單筆頁籤資料
 const siteMenuData = ref<SiteMenu>({
     id: 0,
@@ -32,47 +25,9 @@ function ResetSiteMenuData() {
         subPage: []
     }
 }
-// 所有頁籤資料
-const siteMenuList = ref<SiteMenu[]>([])
 // 所有父頁籤資料
 const parentList = computed(() => siteMenuList.value.filter(menu => menu.viewTypeId == 4))
 
-// 登出
-function LogOut() {
-    adminStore.logOut().then(() => {
-        Swal.fire({
-            icon: 'success',
-            title: '登出成功',
-            timer: 1500,
-            showConfirmButton: false,
-        }).then(() => {
-            router.push('/user/login')
-        })
-    })
-}
-// 取得網站資訊
-async function GetSiteData() {
-    try {
-        const res = await $fetch<{ id: number, name: string, domain: string } | null>('/api/site')
-        if (res) {
-            siteData.value.name = res.name
-            siteData.value.domain = res.domain
-            siteData.value.id = res.id
-            // 取得網站的頁籤資訊
-            const menuRes = await $fetch<SiteMenu[]>(`/api/siteMenu/${res.id}`)
-            siteMenuList.value = menuRes
-        } else {
-            siteData.value.name = ''
-            siteData.value.domain = ''
-            siteData.value.id = 0
-        }
-    }
-    catch (err: any) {
-        if (err.data?.statusCode === 401) {
-            router.push('/user/login')
-        }
-    }
-}
 // 新增網站資訊
 function CreateSite() {
     if (!siteData.value.name) {
@@ -220,25 +175,10 @@ onMounted(() => {
 </script>
 
 <template>
-    <LayoutAdmin>
-        <div class="h-screen">
+    <LayoutAdmin :siteRouteDomain="siteRouteDomain">
+        <div class="wrap">
             <h1 class="text-4xl font-bold w-full">管理者後台</h1>
             <div class="w-full px-2 flex">
-                <div class="w-1/5 border min-h-screen flex flex-col">
-                    <p class="text-lg font-black ms-1">選單</p>
-                    <template v-for="menu in siteMenuList">
-                        <NuxtLink :to="menu.viewTypeId == 4 ? '' : `/${siteRouteDomain}/setting${normalizeSlug(menu.slug)}`"
-                            class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
-                            {{
-                                menu.name }}
-                        </NuxtLink>
-                        <NuxtLink v-for="subPage in menu.subPage" :key="subPage.id" :to="`/${siteRouteDomain}/setting${normalizeSlug(subPage.slug)}`"
-                            class="my-2 ms-4 hover:text-black hover:underline hover:scale-105 transition-all">{{
-                                subPage.name }}
-                        </NuxtLink>
-                    </template>
-                    <UiButton :clickFunction="LogOut" title="登出" class="my-2" />
-                </div>
                 <div class="grow border min-h-screen">
                     <div>
                         <UiAreaTitle :title="'網站管理'"> </UiAreaTitle>
