@@ -21,13 +21,24 @@ const { data: pageData } = await useAsyncData<PageContent | null>(
     `setting-page-${domain}-${slug}`,
     async () => {
         if (!domain || !slug) return null
-        return await $fetch<PageContent>(`/api/siteMenu/${domain}/${slug}`)
+        return await $fetch<PageContent>(`/api/siteMenu/admin/${domain}/${slug}`)
     },
 )
 
 watchEffect(() => {
     editorData.value = pageData.value?.content ?? ''
 })
+
+function SaveContent(){
+    $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
+        method: 'PUT',
+        body: {
+            id: pageData.value?.id,
+            content: editorData.value,
+            status: pageData.value?.status,
+        },
+    })
+}
 
 onMounted(async () => {
     const ck = await import('ckeditor5')
@@ -133,6 +144,7 @@ onMounted(async () => {
             </div>
             <ClientOnly>
                 <Ckeditor v-if="editor && editorConfig" :editor="editor" v-model="editorData" :config="editorConfig" />
+                <UiButton :click-function="SaveContent" :title="'儲存'"></UiButton>
                 <template #fallback>
                     <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
                 </template>
