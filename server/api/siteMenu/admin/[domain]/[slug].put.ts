@@ -12,6 +12,11 @@ type UpdatePagePayload = {
     relatedFileID?: number | string | null
     title?: string | null
 }
+type ParsedUpdateRequest = {
+    payload: UpdatePagePayload
+    uploadedFilePart?: MultiPartData
+}
+
 defineRouteMeta({
     openAPI: {
         tags: ['siteMenu'],
@@ -31,13 +36,23 @@ defineRouteMeta({
         ],
     },
 })
+
+// 讀取、統一 request 資料
+async function readUpdatePayload(event: H3Event): Promise<ParsedUpdateRequest> {
     const contentType = getRequestHeader(event, 'content-type') || ''
 
+    // 如果是 formdata
     if (contentType.includes('multipart/form-data')) {
         const formData = await readMultipartFormData(event)
         const payload: UpdatePagePayload = {}
+        let uploadedFilePart: MultiPartData | undefined
 
         for (const part of formData ?? []) {
+            if (part.filename) {
+                uploadedFilePart = part
+                continue
+            }
+
             const value = part.data.toString()
 
             switch (part.name) {
@@ -61,12 +76,17 @@ defineRouteMeta({
             }
         }
 
-        return payload
+        return {
+            payload,
+            uploadedFilePart,
+        }
     }
-
-    return await readBody(event) as UpdatePagePayload
+    //  如果不是 formdata，則直接讀取 body
+    return {
+        payload: await readBody(event) as UpdatePagePayload,
+    }
 }
-
+// 把上傳檔案存到 public，並回傳檔案資訊
 async function saveUploadedFile(
     siteId: number,
     uploadedFile: MultiPartData,
@@ -85,6 +105,7 @@ async function saveUploadedFile(
     await mkdir(absoluteDir, { recursive: true })
     await writeFile(join(absoluteDir, fileName), uploadedFile.data)
 
+    // 回傳檔案資訊
     return {
         name: originalName,
         path: relativePath,
@@ -96,7 +117,8 @@ export default defineEventHandler(async (event) => {
     const authUser = requireAuth(event)
     const domain = getRouterParam(event, 'domain') as string
     const slug = getRouterParam(event, 'slug') as string
-    const payload = await readUpdatePayload(event)
+    // 先處理 request 資料
+    const { payload, uploadedFilePart } = await readUpdatePayload(event)
 
     const pageId = Number(payload.id)
     if (!pageId || Number.isNaN(pageId)) {
@@ -147,10 +169,6 @@ export default defineEventHandler(async (event) => {
             statusMessage: '頁面資料不存在',
         })
     }
-
-    const contentType = getRequestHeader(event, 'content-type') || ''
-    const multipartData = contentType.includes('multipart/form-data') ? await readMultipartFormData(event) : null
-    const uploadedFilePart = multipartData?.find((part): part is MultiPartData => Boolean(part.filename))
 
     const nextStatus = payload.status === undefined || payload.status === null || payload.status === ''
         ? undefined
