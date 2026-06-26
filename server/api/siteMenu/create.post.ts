@@ -38,12 +38,13 @@ export default defineEventHandler(async (event) => {
             statusMessage: '網站 ID 為必填',
         })
     }
-
+    // 判斷是否需要新增page
     const needsPage = await requiresPageForViewType(body.viewTypeId)
 
     const res = await prisma.$transaction(async (tx) => {
         let pageId: number | null = null
 
+        // 如果需要 page 建立新的 page
         if (needsPage) {
             const page = await tx.page.create({
                 data: {

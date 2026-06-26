@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
             statusMessage: '頁籤名稱為必填',
         })
     }
-
+    // 判斷是否需要新增page
     const needsPage = body.viewTypeId ? await requiresPageForViewType(body.viewTypeId) : false
 
     const res = await prisma.$transaction(async (tx) => {
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
         }
 
         let pageId = currentMenu.pageId
-
+        // 如果需要 page 但目前沒有 pageId，則建立新的 page
         if (needsPage && !pageId) {
             const page = await tx.page.create({
                 data: {
@@ -59,6 +59,7 @@ export default defineEventHandler(async (event) => {
             pageId = page.id
         }
 
+        // 如果需要 page 且已有 pageId，則更新 page 內容
         if (needsPage && pageId) {
             await tx.page.update({
                 where: { id: pageId },
