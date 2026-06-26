@@ -1,5 +1,13 @@
 import { requiresPageForViewType } from '../../utils/viewType'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['siteMenu'],
+        summary: '更新網站 menu 設定',
+        description: '如果是 page/pdf 等需要頁面的 viewType，會自動建立 page，並更新 page 內容',
+    },
+})
+
 // /api/siteMenu/update 更新網站設定
 export default defineEventHandler(async (event) => {
     requireAuth(event)

@@ -1,6 +1,15 @@
-// /api/auth/register 註冊
 import { prisma } from '../../utils/prisma'
 import bcrypt from 'bcrypt'
+
+defineRouteMeta({
+    openAPI: {
+        tags: ['auth'],
+        summary: '使用者註冊',
+        description: '使用者註冊',
+    },
+})
+
+// /api/auth/register 註冊
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 

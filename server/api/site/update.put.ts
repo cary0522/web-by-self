@@ -1,3 +1,11 @@
+defineRouteMeta({
+    openAPI: {
+        tags: ['site'],
+        summary: '更新網站設定',
+        description: '更新網站設定',
+    },
+})
+
 // /api/site/update 更新網站設定
 export default defineEventHandler(async (event) => {
     requireAuth(event)

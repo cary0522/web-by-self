@@ -12,8 +12,25 @@ type UpdatePagePayload = {
     relatedFileID?: number | string | null
     title?: string | null
 }
-
-async function readUpdatePayload(event: H3Event): Promise<UpdatePagePayload> {
+defineRouteMeta({
+    openAPI: {
+        tags: ['siteMenu'],
+        summary: '更新後台頁面內容',
+        description: '提供給管理者使用，需登入，可回傳所有狀態的 page，並可上傳檔案',
+        parameters: [
+            {
+                in: 'path',
+                name: 'domain',
+                required: true,
+            },
+            {
+                in: 'path',
+                name: 'slug',
+                required: true,
+            },
+        ],
+    },
+})
     const contentType = getRequestHeader(event, 'content-type') || ''
 
     if (contentType.includes('multipart/form-data')) {

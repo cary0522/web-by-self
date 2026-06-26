@@ -23,6 +23,7 @@ export default defineNuxtConfig({
   nitro: {
     experimental: {
       database: false,
+      openAPI: true,
     },
     externals: {
       external: ['@prisma/client', '.prisma/client'],

@@ -1,5 +1,20 @@
 import { getSiteByDomain, getSiteMenusBySiteId } from '../../utils/site'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['site'],
+        summary: '取得網站設定',
+        description: '取得網站設定',
+        parameters: [
+            {
+                in: 'path',
+                name: 'domain',
+                required: true,
+            },
+        ],
+    },
+})
+
 // /api/site/domain GET 取得網站設定
 export default defineEventHandler(async (event) => {
     const domain = getRouterParam(event, 'domain')

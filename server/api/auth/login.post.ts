@@ -1,6 +1,14 @@
-// /api/auth/login 登入
 import bcrypt from 'bcrypt'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['auth'],
+        summary: '使用者登入',
+        description: '使用者登入',
+    },
+})
+
+// /api/auth/login 登入
 export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 

@@ -1,5 +1,13 @@
 import { prisma } from '../utils/prisma'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['check'],
+        summary: '健康檢查 API',
+        description: '提供服務健康檢查的 API，檢查資料庫連線狀態',
+    },
+})
+
 export default defineEventHandler(async () => {
     try {
         await prisma.$queryRaw`SELECT 1`

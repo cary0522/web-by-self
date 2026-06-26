@@ -1,3 +1,11 @@
+defineRouteMeta({
+    openAPI: {
+        tags: ['auth'],
+        summary: '使用者登出',
+        description: '使用者登出',
+    },
+})
+
 // /api/auth/logout 登出
 export default defineEventHandler(async (event) => {
     deleteCookie(event, 'auth_token', {

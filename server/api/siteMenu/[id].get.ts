@@ -1,5 +1,20 @@
 import { getSiteMenusBySiteId } from '../../utils/site'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['siteMenu'],
+        summary: '取得網站 menu 設定',
+        description: '包含 parent 與 home 的 menu，並且包含 subPage 的 menu',
+        parameters: [
+            {
+                in: 'path',
+                name: 'id',
+                required: true,
+            },
+        ],
+    },
+})
+
 // /api/siteMenu/:id 取得網站 menu 設定
 export default defineEventHandler(async (event) => {
     requireAuth(event)

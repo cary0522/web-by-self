@@ -1,3 +1,11 @@
+defineRouteMeta({
+    openAPI: {
+        tags: ['site'],
+        summary: '建立網站設定',
+        description: '建立網站設定',
+    },
+})
+
 // /api/site/create 新增網站設定
 export default defineEventHandler(async (event) => {
     const authUser = requireAuth(event)

@@ -1,5 +1,13 @@
 import { getSiteByCreatedById } from '../../utils/site'
 
+defineRouteMeta({
+    openAPI: {
+        tags: ['site'],
+        summary: '取得網站設定',
+        description: '取得網站設定',
+    },
+})
+
 // /api/site GET 取得網站設定
 export default defineEventHandler(async (event) => {
     const authUser = requireAuth(event)
