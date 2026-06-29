@@ -4,7 +4,9 @@ import 'ckeditor5/ckeditor5.css'
 import 'ckeditor5-premium-features/ckeditor5-premium-features.css'
 
 interface PageContent {
-    content?: string | null
+    id:number,
+    content?: string | null,
+    status?: string | null
 }
 
 const route = useRoute()
@@ -30,14 +32,14 @@ watchEffect(() => {
 })
 
 function SaveContent(){
-    $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
-        method: 'PUT',
-        body: {
-            id: pageData.value?.id,
-            content: editorData.value,
-            status: pageData.value?.status,
-        },
-    })
+        $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
+            method: 'PUT',
+            body: {
+                id: pageData.value?.id,
+                content: editorData.value,
+                status: pageData.value?.status,
+            },
+        })
 }
 
 onMounted(async () => {
