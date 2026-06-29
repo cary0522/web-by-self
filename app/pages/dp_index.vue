@@ -175,6 +175,32 @@ function CreateSiteMenu() {
     })
 }
 
+function DeleteSiteMenu(menu: SiteMenu) {
+    $fetch('/api/siteMenu/delete', {
+        method: 'DELETE' as any,
+        body: {
+            menuId: menu.id,
+            name: menu.name,
+            viewTypeId: menu.viewTypeId,
+        }
+    }).then((res) => {
+        Swal.fire({
+            icon: 'success',
+            title: '頁籤刪除成功',
+            confirmButtonText: '確定',
+        }).then(() => {
+            GetSiteData()
+            ResetSiteMenuData()
+        })
+    }).catch((err) => {
+        Swal.fire({
+            icon: 'error',
+            title: '頁籤刪除失敗',
+            text: err.data?.statusMessage || '頁籤刪除失敗，請稍後再試',
+        })
+    })
+}
+
 onMounted(() => {
     GetSiteData()
     GetViewTypeList()
@@ -211,6 +237,7 @@ onMounted(() => {
                             class="flex flex-wrap items-center">
                             <UiSiteMenu :data="menu"></UiSiteMenu>
                             <UiButton :clickFunction="() => UpdateSiteMenu(menu)" title="更新" />
+                            <UiButton :clickFunction="() => DeleteSiteMenu(menu)" title="刪除" />
                             <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
                                 <UiSiteMenu :data="sub"></UiSiteMenu>
                                 <label for="parentPage">父頁籤：</label>
@@ -220,6 +247,7 @@ onMounted(() => {
                                     </option>
                                 </select>
                                 <UiButton :clickFunction="() => UpdateSiteMenu(sub)" title="更新子頁籤" />
+                                <UiButton :clickFunction="() => DeleteSiteMenu(sub)" title="刪除子頁籤" />
                             </div>
                         </div>
                         <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
