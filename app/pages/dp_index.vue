@@ -1,3 +1,63 @@
+<template>
+    <LayoutAdmin :siteRouteDomain="siteRouteDomain">
+        <div class="wrap">
+            <h1 class="text-4xl font-bold w-full">管理者後台</h1>
+            <div class="w-full px-2 flex">
+                <div class="grow border min-h-screen">
+                    <div>
+                        <UiAreaTitle :title="'網站管理'"> </UiAreaTitle>
+                        <div class="w-full ps-4">
+                            <div class="my-1">
+                                <label for="siteName">網站名稱：</label>
+                                <input type="text" id="siteName" v-model="siteData.name" placeholder="網站名稱" />
+                            </div>
+                            <div class="my-1">
+                                <label for="siteDomain">網站域名：</label>
+                                <input type="text" id="siteDomain" v-model="siteData.domain" placeholder="網站域名" />
+                            </div>
+                        </div>
+                        <div class="w-full flex justify-center items-center">
+                            <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
+                            <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
+                        </div>
+                    </div>
+                    <div v-if="siteData.id !== 0">
+                        <UiAreaTitle :title="'頁籤管理'"> </UiAreaTitle>
+                        <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
+                            class="flex flex-wrap items-center">
+                            <UiSiteMenu :data="menu"></UiSiteMenu>
+                            <UiButton :clickFunction="() => UpdateSiteMenu(menu)" title="更新" />
+                            <UiButton :clickFunction="() => DeleteSiteMenu(menu)" title="刪除" />
+                            <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
+                                <UiSiteMenu :data="sub"></UiSiteMenu>
+                                <label for="parentPage">父頁籤：</label>
+                                <select name="parentPage" id="parentPage" v-model="sub.parentId">
+                                    <option v-for="option in parentList" :key="option.id" :value="option.id">
+                                        {{ option.name }}
+                                    </option>
+                                </select>
+                                <UiButton :clickFunction="() => UpdateSiteMenu(sub)" title="更新子頁籤" />
+                                <UiButton :clickFunction="() => DeleteSiteMenu(sub)" title="刪除子頁籤" />
+                            </div>
+                        </div>
+                        <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
+                        <div class="w-full flex">
+                            <UiSiteMenu :data="siteMenuData"></UiSiteMenu>
+                            <select name="parent" id="parent" v-model="siteMenuData.parentId"
+                                v-if="!isParent(siteMenuData.viewTypeId)">
+                                <option v-for="option in parentList" :key="option.id" :value="option.id">
+                                    {{ option.name }}
+                                </option>
+                            </select>
+                            <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </LayoutAdmin>
+</template>
+
 <script setup lang="ts">
 import Swal from 'sweetalert2';
 import type { SiteMenu } from '~/types/site-menu';
@@ -207,63 +267,3 @@ onMounted(() => {
 })
 
 </script>
-
-<template>
-    <LayoutAdmin :siteRouteDomain="siteRouteDomain">
-        <div class="wrap">
-            <h1 class="text-4xl font-bold w-full">管理者後台</h1>
-            <div class="w-full px-2 flex">
-                <div class="grow border min-h-screen">
-                    <div>
-                        <UiAreaTitle :title="'網站管理'"> </UiAreaTitle>
-                        <div class="w-full ps-4">
-                            <div class="my-1">
-                                <label for="siteName">網站名稱：</label>
-                                <input type="text" id="siteName" v-model="siteData.name" placeholder="網站名稱" />
-                            </div>
-                            <div class="my-1">
-                                <label for="siteDomain">網站域名：</label>
-                                <input type="text" id="siteDomain" v-model="siteData.domain" placeholder="網站域名" />
-                            </div>
-                        </div>
-                        <div class="w-full flex justify-center items-center">
-                            <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
-                            <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
-                        </div>
-                    </div>
-                    <div v-if="siteData.id !== 0">
-                        <UiAreaTitle :title="'頁籤管理'"> </UiAreaTitle>
-                        <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
-                            class="flex flex-wrap items-center">
-                            <UiSiteMenu :data="menu"></UiSiteMenu>
-                            <UiButton :clickFunction="() => UpdateSiteMenu(menu)" title="更新" />
-                            <UiButton :clickFunction="() => DeleteSiteMenu(menu)" title="刪除" />
-                            <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
-                                <UiSiteMenu :data="sub"></UiSiteMenu>
-                                <label for="parentPage">父頁籤：</label>
-                                <select name="parentPage" id="parentPage" v-model="sub.parentId">
-                                    <option v-for="option in parentList" :key="option.id" :value="option.id">
-                                        {{ option.name }}
-                                    </option>
-                                </select>
-                                <UiButton :clickFunction="() => UpdateSiteMenu(sub)" title="更新子頁籤" />
-                                <UiButton :clickFunction="() => DeleteSiteMenu(sub)" title="刪除子頁籤" />
-                            </div>
-                        </div>
-                        <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
-                        <div class="w-full flex">
-                            <UiSiteMenu :data="siteMenuData"></UiSiteMenu>
-                            <select name="parent" id="parent" v-model="siteMenuData.parentId"
-                                v-if="!isParent(siteMenuData.viewTypeId)">
-                                <option v-for="option in parentList" :key="option.id" :value="option.id">
-                                    {{ option.name }}
-                                </option>
-                            </select>
-                            <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </LayoutAdmin>
-</template>

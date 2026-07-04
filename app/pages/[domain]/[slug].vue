@@ -1,3 +1,13 @@
+<template>
+    <LayoutUser>
+        <UiNav :domain="domain"></UiNav>
+        <div class="px-4 py-2 text-sm text-gray-500">
+            {{ slug }}
+        </div>
+        <div v-html="pageContent"></div>
+    </LayoutUser>
+</template>
+
 <script lang="ts" setup>
 interface PageContent {
     content?: string | null
@@ -21,13 +31,3 @@ const { data: pageData } = await useAsyncData<PageContent | null>(
 
 const pageContent = computed(() => pageData.value?.content ?? '')
 </script>
-
-<template>
-    <LayoutUser>
-        <UiNav :domain="domain"></UiNav>
-        <div class="px-4 py-2 text-sm text-gray-500">
-            {{ slug }}
-        </div>
-        <div v-html="pageContent"></div>
-    </LayoutUser>
-</template>

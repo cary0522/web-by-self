@@ -1,17 +1,3 @@
-<script setup lang="ts">
-import type { SiteMenu } from '~/types/site-menu'
-
-const props = defineProps<{
-    data: SiteMenu
-}>()
-
-import useOptions from '~/composables/useOptions'
-const { ViewTypeList, GetViewTypeList } = useOptions()
-
-onMounted(() => {
-    GetViewTypeList()
-})
-</script>
 <template>
     <div class="flex items-center">
         <p class="mx-2">頁籤名稱：
@@ -28,3 +14,18 @@ onMounted(() => {
         </select>
     </div>
 </template>
+
+<script setup lang="ts">
+import type { SiteMenu } from '~/types/site-menu'
+
+const props = defineProps<{
+    data: SiteMenu
+}>()
+
+import useOptions from '~/composables/useOptions'
+const { ViewTypeList, GetViewTypeList } = useOptions()
+
+onMounted(() => {
+    GetViewTypeList()
+})
+</script>

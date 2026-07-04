@@ -1,8 +1,3 @@
-<script setup lang="ts">
-
-// 取得首頁排版及對應的資料:banner、公告等等
-</script>
-
 <template>
     <LayoutUser>
         <div class="flex h-screen items-center justify-center">
@@ -10,3 +5,8 @@
         </div>
     </LayoutUser>
 </template>
+
+<script setup lang="ts">
+
+// 取得首頁排版及對應的資料:banner、公告等等
+</script>

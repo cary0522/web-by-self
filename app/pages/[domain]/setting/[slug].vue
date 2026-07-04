@@ -1,10 +1,27 @@
+<template>
+    <LayoutAdmin :siteRouteDomain="String(domain)">
+        <div class="wrap">
+            <div class="px-4 py-2 text-sm text-gray-500">
+                {{ domain }} / {{ slug }}
+            </div>
+            <ClientOnly>
+                <Ckeditor v-if="editor && editorConfig" :editor="editor" v-model="editorData" :config="editorConfig" />
+                <UiButton :click-function="SaveContent" :title="'儲存'"></UiButton>
+                <template #fallback>
+                    <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
+                </template>
+            </ClientOnly>
+        </div>
+    </LayoutAdmin>
+</template>
+
 <script lang="ts" setup>
 import { Ckeditor } from '@ckeditor/ckeditor5-vue'
 import 'ckeditor5/ckeditor5.css'
 import 'ckeditor5-premium-features/ckeditor5-premium-features.css'
 
 interface PageContent {
-    id:number,
+    id: number,
     content?: string | null,
     status?: string | null
 }
@@ -31,15 +48,15 @@ watchEffect(() => {
     editorData.value = pageData.value?.content ?? ''
 })
 
-function SaveContent(){
-        $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
-            method: 'PUT',
-            body: {
-                id: pageData.value?.id,
-                content: editorData.value,
-                status: pageData.value?.status,
-            },
-        })
+function SaveContent() {
+    $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
+        method: 'PUT',
+        body: {
+            id: pageData.value?.id,
+            content: editorData.value,
+            status: pageData.value?.status,
+        },
+    })
 }
 
 onMounted(async () => {
@@ -137,20 +154,3 @@ onMounted(async () => {
     }
 })
 </script>
-
-<template>
-    <LayoutAdmin :siteRouteDomain="String(domain)">
-        <div class="wrap">
-            <div class="px-4 py-2 text-sm text-gray-500">
-                {{ domain }} / {{ slug }}
-            </div>
-            <ClientOnly>
-                <Ckeditor v-if="editor && editorConfig" :editor="editor" v-model="editorData" :config="editorConfig" />
-                <UiButton :click-function="SaveContent" :title="'儲存'"></UiButton>
-                <template #fallback>
-                    <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
-                </template>
-            </ClientOnly>
-        </div>
-    </LayoutAdmin>
-</template>

@@ -1,3 +1,11 @@
+<template>
+    <div class="w-full h-[60px] bg-blue-400 flex items-center">
+        <NuxtLink v-for="nav in NavList" :key="nav.id" :to="`/${routeDomain}${normalizeSlug(nav.slug)}`"
+            class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all">{{ nav.name }}</NuxtLink>
+
+    </div>
+</template>
+
 <script setup lang="ts">
 interface NavType {
     id: number,
@@ -20,11 +28,3 @@ onMounted(() => {
     GetNavList()
 })
 </script>
-
-<template>
-    <div class="w-full h-[60px] bg-blue-400 flex items-center">
-        <NuxtLink v-for="nav in NavList" :key="nav.id" :to="`/${routeDomain}${normalizeSlug(nav.slug)}`"
-            class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all">{{ nav.name }}</NuxtLink>
-
-    </div>
-</template>
