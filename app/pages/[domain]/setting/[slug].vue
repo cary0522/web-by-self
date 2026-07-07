@@ -133,7 +133,7 @@ onMounted(async () => {
             previewsInData: true,
         },
         simpleUpload: {
-            uploadUrl: `${baseUrl}/api/upload/file`,
+            uploadUrl: `${baseUrl}/api/file/editor/upload?domain=${domain}`,
             withCredentials: true,
         },
         image: {
