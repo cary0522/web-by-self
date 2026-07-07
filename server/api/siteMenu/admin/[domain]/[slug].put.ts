@@ -1,9 +1,8 @@
+import { prisma } from '../../../../utils/prisma'
 import { requireAuth } from '../../../../utils/auth'
 import { getSiteByDomain } from '../../../../utils/site'
+import { saveUploadedFileToSite } from '../../../../utils/file'
 import type { H3Event, MultiPartData } from 'h3'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { basename, extname, join } from 'node:path'
-import { randomUUID } from 'node:crypto'
 
 type UpdatePagePayload = {
     id?: number | string
@@ -86,32 +85,6 @@ async function readUpdatePayload(event: H3Event): Promise<ParsedUpdateRequest> {
         payload: await readBody(event) as UpdatePagePayload,
     }
 }
-// 把上傳檔案存到 public，並回傳檔案資訊
-async function saveUploadedFile(
-    siteId: number,
-    uploadedFile: MultiPartData,
-): Promise<{ name: string; path: string }> {
-    const originalName = uploadedFile.filename || 'upload'
-    const fileExt = extname(originalName)
-    const baseName = basename(originalName, fileExt)
-        .replace(/[^a-zA-Z0-9-_]+/g, '_')
-        .replace(/^_+|_+$/g, '') || 'file'
-
-    const fileName = `${Date.now()}-${randomUUID()}-${baseName}${fileExt}`
-    const relativeDir = `/uploads/pages/${siteId}`
-    const absoluteDir = join(process.cwd(), 'public', 'uploads', 'pages', String(siteId))
-    const relativePath = `${relativeDir}/${fileName}`
-
-    await mkdir(absoluteDir, { recursive: true })
-    await writeFile(join(absoluteDir, fileName), uploadedFile.data)
-
-    // 回傳檔案資訊
-    return {
-        name: originalName,
-        path: relativePath,
-    }
-}
-
 // /api/siteMenu/admin/:domain/:slug 更新後台頁面內容，需登入，可上傳檔案並回傳所有狀態的 page
 export default defineEventHandler(async (event) => {
     const authUser = requireAuth(event)
@@ -196,15 +169,7 @@ export default defineEventHandler(async (event) => {
         let relatedFileID = nextRelatedFileId
 
         if (uploadedFilePart) {
-            const savedFile = await saveUploadedFile(site.id, uploadedFilePart)
-            const fileRecord = await tx.file.create({
-                data: {
-                    name: savedFile.name,
-                    path: savedFile.path,
-                    siteId: site.id,
-                    uploadedBy: authUser.id,
-                },
-            })
+            const fileRecord = await saveUploadedFileToSite(site.id, authUser.id, uploadedFilePart, 'page', tx)
             relatedFileID = fileRecord.id
         }
 
