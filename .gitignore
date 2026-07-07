@@ -34,3 +34,5 @@ graphify-out/
 
 # CodeGraph
 .codegraph/
+
+/public/uploads/*
