@@ -18,6 +18,39 @@ export async function getPageContent(domain: string, slug: string, status?: bool
         })
     }
 
+    if (slug === 'home') {
+        const siteMenu = await prisma.siteMenu.findFirst({
+            where: {
+                siteId: site.id,
+                isDeleted: false,
+                viewTypeRelation: {
+                    name: 'home',
+                },
+            },
+            include: {
+                viewTypeRelation: true,
+                page: {
+                    include: {
+                        sections: {
+                            orderBy: {
+                                sortOrder: 'asc',
+                            },
+                        },
+                    },
+                },
+            },
+        })
+
+        if (!siteMenu) {
+            throw createError({
+                statusCode: 400,
+                statusMessage: '沒有此 siteMenu',
+            })
+        }
+
+        return siteMenu
+    }
+
     const siteMenu = await prisma.siteMenu.findFirst({
         where: {
             siteId: site.id,

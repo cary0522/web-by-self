@@ -1,4 +1,6 @@
-import { requiresPageForViewType } from '../../utils/viewType'
+import { prisma } from '../../utils/prisma'
+import { requireAuth } from '../../utils/auth'
+import { requiresPageForViewType, isHomeViewType } from '../../utils/viewType'
 
 defineRouteMeta({
     openAPI: {
@@ -38,18 +40,19 @@ export default defineEventHandler(async (event) => {
             statusMessage: '網站 ID 為必填',
         })
     }
-    // 判斷是否需要新增page
+    // 判斷是否需要新增 page 或 home layout page
     const needsPage = await requiresPageForViewType(body.viewTypeId)
+    const needsHome = await isHomeViewType(body.viewTypeId)
 
     const res = await prisma.$transaction(async (tx) => {
         let pageId: number | null = null
 
-        // 如果需要 page 建立新的 page
-        if (needsPage) {
+        // 如果需要 page 或需要 home layout page，建立新的 page
+        if (needsPage || needsHome) {
             const page = await tx.page.create({
                 data: {
                     title: body.name,
-                    content: body.content ?? null,
+                    content: needsPage ? body.content ?? null : null,
                     status: 1,
                     siteId: body.siteId,
                     createdBy: authUser.id,
@@ -58,6 +61,18 @@ export default defineEventHandler(async (event) => {
             })
 
             pageId = page.id
+
+            if (needsHome) {
+                await tx.pageSection.create({
+                    data: {
+                        pageId: page.id,
+                        type: 'home',
+                        title: body.name ?? null,
+                        sortOrder: 0,
+                        isEnabled: true,
+                    },
+                })
+            }
         }
 
         return tx.siteMenu.create({
