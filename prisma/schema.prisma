@@ -151,7 +151,6 @@ model SiteMenu {
   icon      String? @db.VarChar(100)
   sortOrder Int     @default(0)
   isEnabled Boolean @default(true)
-  isParent  Boolean @default(false) // 根據是否有子菜單來設定
 
   url    String? @db.VarChar(500) // 外部連結用
   target String? @db.VarChar(20) // _self / _blank
@@ -174,5 +173,6 @@ model SiteMenu {
   @@index([parentId])
   @@index([createdById])
   @@index([isDeleted])
+  @@unique([siteId, slug])
   @@map("SiteMenus")
 }
