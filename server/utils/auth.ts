@@ -8,7 +8,7 @@ export function requireAuth(event: H3Event): JwtPayload {
     if (!token) {
         throw createError({
             statusCode: 401,
-            statusMessage: '請先登入',
+            message: '請先登入',
         })
     }
 
@@ -20,7 +20,7 @@ export function requireAuth(event: H3Event): JwtPayload {
     catch {
         throw createError({
             statusCode: 401,
-            statusMessage: '登入已過期，請重新登入',
+            message: '登入已過期，請重新登入',
         })
     }
 }

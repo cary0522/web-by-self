@@ -14,14 +14,14 @@ export default defineEventHandler(async (event) => {
     if (!body.siteId) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站 ID 為必填',
+            message: '網站 ID 為必填',
         })
     }
 
     if (!body.name) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站名稱為必填',
+            message: '網站名稱為必填',
         })
     }
 

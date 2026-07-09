@@ -6,7 +6,7 @@ export async function getPageContent(domain: string, slug: string, status?: bool
     if (!domain || !slug) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'Domain 與 slug 為必填',
+            message: 'Domain 與 slug 為必填',
         })
     }
 
@@ -14,7 +14,7 @@ export async function getPageContent(domain: string, slug: string, status?: bool
     if (!site) {
         throw createError({
             statusCode: 400,
-            statusMessage: '沒有此 site',
+            message: '沒有此 site',
         })
     }
 
@@ -44,7 +44,7 @@ export async function getPageContent(domain: string, slug: string, status?: bool
         if (!siteMenu) {
             throw createError({
                 statusCode: 400,
-                statusMessage: '沒有此 siteMenu',
+                message: '沒有此 siteMenu',
             })
         }
 
@@ -74,7 +74,7 @@ export async function getPageContent(domain: string, slug: string, status?: bool
     if (!siteMenu) {
         throw createError({
             statusCode: 400,
-            statusMessage: '沒有此 siteMenu',
+            message: '沒有此 siteMenu',
         })
     }
 
@@ -85,7 +85,7 @@ export async function getPageContent(domain: string, slug: string, status?: bool
         if (siteMenu.page?.status !== requiredPageStatus) {
             throw createError({
                 statusCode: 404,
-                statusMessage: '沒有此 page',
+                message: '沒有此 page',
             })
         }
     }

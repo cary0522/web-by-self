@@ -22,12 +22,12 @@ defineRouteMeta({
 export default defineEventHandler(async (event) => {
     const id = Number(getRouterParam(event, 'id'))
     if (Number.isNaN(id) || id <= 0) {
-        throw createError({ statusCode: 400, statusMessage: 'file id 格式錯誤' })
+        throw createError({ statusCode: 400, message: 'file id 格式錯誤' })
     }
 
     const file = await getFileRecord(id)
     if (!file) {
-        throw createError({ statusCode: 404, statusMessage: '找不到檔案' })
+        throw createError({ statusCode: 404, message: '找不到檔案' })
     }
 
     const safeRelativePath = file.path.replace(/^\//, '')
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     try {
         await access(absolutePath)
     } catch {
-        throw createError({ statusCode: 404, statusMessage: '實體檔案不存在' })
+        throw createError({ statusCode: 404, message: '實體檔案不存在' })
     }
 
     event.res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`)

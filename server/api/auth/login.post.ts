@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
     if (!body.account || !body.password) {
         throw createError({
             statusCode: 400,
-            statusMessage: '帳號與密碼為必填',
+            message: '帳號與密碼為必填',
         })
     }
 
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     if (!user) {
         throw createError({
             statusCode: 401,
-            statusMessage: '帳號或密碼錯誤',
+            message: '帳號或密碼錯誤',
         })
     }
 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
     if (!isPasswordValid) {
         throw createError({
             statusCode: 401,
-            statusMessage: '帳號或密碼錯誤',
+            message: '帳號或密碼錯誤',
         })
     }
 

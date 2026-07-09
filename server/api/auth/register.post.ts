@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     if (existingUser) {
         throw createError({
             statusCode: 409,
-            statusMessage: '帳號或 email 已存在',
+            message: '帳號或 email 已存在',
         })
     }
     // 密碼加密（使用 bcrypt）

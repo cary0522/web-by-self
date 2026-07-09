@@ -97,7 +97,7 @@ export default defineEventHandler(async (event) => {
     if (!pageId || Number.isNaN(pageId)) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'page ID 為必填',
+            message: 'page ID 為必填',
         })
     }
 
@@ -105,7 +105,7 @@ export default defineEventHandler(async (event) => {
     if (!site) {
         throw createError({
             statusCode: 400,
-            statusMessage: '沒有此 site',
+            message: '沒有此 site',
         })
     }
 
@@ -124,7 +124,7 @@ export default defineEventHandler(async (event) => {
     if (!siteMenu) {
         throw createError({
             statusCode: 404,
-            statusMessage: '沒有此 siteMenu',
+            message: '沒有此 siteMenu',
         })
     }
 
@@ -132,14 +132,14 @@ export default defineEventHandler(async (event) => {
     if (viewTypeName !== 'page' && viewTypeName !== 'pdf') {
         throw createError({
             statusCode: 400,
-            statusMessage: '此頁籤不是可編輯的 page 類型',
+            message: '此頁籤不是可編輯的 page 類型',
         })
     }
 
     if (!siteMenu.page || siteMenu.page.id !== pageId) {
         throw createError({
             statusCode: 404,
-            statusMessage: '頁面資料不存在',
+            message: '頁面資料不存在',
         })
     }
 
@@ -150,7 +150,7 @@ export default defineEventHandler(async (event) => {
     if (nextStatus !== undefined && Number.isNaN(nextStatus)) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'status 格式錯誤',
+            message: 'status 格式錯誤',
         })
     }
 
@@ -161,7 +161,7 @@ export default defineEventHandler(async (event) => {
     if (nextRelatedFileId !== undefined && Number.isNaN(nextRelatedFileId)) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'relatedFileID 格式錯誤',
+            message: 'relatedFileID 格式錯誤',
         })
     }
 

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     if (!body.name) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站名稱為必填',
+            message: '網站名稱為必填',
         })
     }
 

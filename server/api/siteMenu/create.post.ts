@@ -19,25 +19,25 @@ export default defineEventHandler(async (event) => {
     if (!body.name) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站名稱為必填',
+            message: '網站名稱為必填',
         })
     }
     if (!body.slug) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站 slug 為必填',
+            message: '網站 slug 為必填',
         })
     }
     if (body.viewTypeId == 0) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站 viewType 為必填',
+            message: '網站 viewType 為必填',
         })
     }
     if (!body.siteId) {
         throw createError({
             statusCode: 400,
-            statusMessage: '網站 ID 為必填',
+            message: '網站 ID 為必填',
         })
     }
     // 判斷是否需要新增 page 或 home layout page

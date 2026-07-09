@@ -14,22 +14,22 @@ export default defineEventHandler(async (event) => {
     const authUser = requireAuth(event)
     const domain = String(getQuery(event).domain || '')
     if (!domain) {
-        throw createError({ statusCode: 400, statusMessage: 'domain 為必填' })
+        throw createError({ statusCode: 400, message: 'domain 為必填' })
     }
 
     const site = await getSiteByDomain(domain)
     if (!site) {
-        throw createError({ statusCode: 404, statusMessage: '找不到 site' })
+        throw createError({ statusCode: 404, message: '找不到 site' })
     }
 
     const formData = await readMultipartFormData(event)
     if (!formData || formData.length === 0) {
-        throw createError({ statusCode: 400, statusMessage: '請上傳檔案' })
+        throw createError({ statusCode: 400, message: '請上傳檔案' })
     }
 
     const filePart = formData.find(part => part.filename)
     if (!filePart) {
-        throw createError({ statusCode: 400, statusMessage: '找不到檔案欄位' })
+        throw createError({ statusCode: 400, message: '找不到檔案欄位' })
     }
 
     const fileRecord = await saveUploadedFileToSite(site.id, authUser.id, filePart, 'file')

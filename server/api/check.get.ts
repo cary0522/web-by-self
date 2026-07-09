@@ -21,7 +21,7 @@ export default defineEventHandler(async () => {
     } catch (error) {
         throw createError({
             statusCode: 503,
-            statusMessage: 'Database Unavailable',
+            message: 'Database Unavailable',
             data: {
                 ok: false,
                 service: 'web-by-self',

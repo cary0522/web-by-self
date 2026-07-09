@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
     if (!domain) {
         throw createError({
             statusCode: 400,
-            statusMessage: 'Domain is required',
+            message: 'Domain is required',
         })
     }
 

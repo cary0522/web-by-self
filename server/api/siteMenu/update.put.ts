@@ -18,14 +18,14 @@ export default defineEventHandler(async (event) => {
     if (!body.menuId) {
         throw createError({
             statusCode: 400,
-            statusMessage: '頁籤 ID 為必填',
+            message: '頁籤 ID 為必填',
         })
     }
 
     if (!body.name) {
         throw createError({
             statusCode: 400,
-            statusMessage: '頁籤名稱為必填',
+            message: '頁籤名稱為必填',
         })
     }
     // 判斷是否需要新增 page 
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
         if (!currentMenu) {
             throw createError({
                 statusCode: 404,
-                statusMessage: '頁籤不存在',
+                message: '頁籤不存在',
             })
         }
 
