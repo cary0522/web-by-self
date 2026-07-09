@@ -40,7 +40,7 @@ const { data: pageData } = await useAsyncData<PageContent | null>(
     `setting-page-${domain}-${slug}`,
     async () => {
         if (!domain || !slug) return null
-        return await $fetch<PageContent>(`/api/siteMenu/admin/${domain}/${slug}`)
+        return await $fetch<PageContent>(`/api/page/admin/${domain}/${slug}`)
     },
 )
 
@@ -49,7 +49,7 @@ watchEffect(() => {
 })
 
 function SaveContent() {
-    $fetch(`/api/siteMenu/admin/${domain}/${slug}`, {
+    $fetch(`/api/page/admin/${domain}/${slug}`, {
         method: 'PUT',
         body: {
             id: pageData.value?.id,

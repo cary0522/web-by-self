@@ -25,7 +25,7 @@ const { data: pageData } = await useAsyncData<PageContent | null>(
     `page-${domain}-${slug}`,
     async () => {
         if (!domain || !slug) return null
-        return await $fetch<PageContent>(`/api/siteMenu/${domain}/${slug}`)
+        return await $fetch<PageContent>(`/api/page/${domain}/${slug}`)
     },
 )
 
