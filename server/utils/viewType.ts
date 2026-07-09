@@ -11,7 +11,7 @@ export async function requiresPageForViewType(viewTypeId: number) {
   })
 
   const viewTypeName = viewType?.name?.toLowerCase()
-  return viewTypeName === 'page' || viewTypeName === 'pdf'
+  return viewTypeName === 'page' || viewTypeName === 'pdf' || viewTypeName === 'home'
 }
 
 export async function isHomeViewType(viewTypeId: number) {
