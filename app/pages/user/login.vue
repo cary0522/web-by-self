@@ -73,7 +73,7 @@ async function login() {
         await Swal.fire({
             icon: 'error',
             title: '登入失敗',
-            text: err.data?.statusMessage || '登入失敗，請稍後再試',
+            text: err.data?.message || '登入失敗，請稍後再試',
         })
         window.location.reload()
     }

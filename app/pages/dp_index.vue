@@ -124,7 +124,7 @@ function CreateSite() {
         Swal.fire({
             icon: 'error',
             title: '網站建立失敗',
-            text: err.data?.statusMessage || '網站建立失敗，請稍後再試',
+            text: err.data?.message || '網站建立失敗，請稍後再試',
         })
     })
 }
@@ -157,7 +157,7 @@ function UpdateSite() {
         Swal.fire({
             icon: 'error',
             title: '網站更新失敗',
-            text: err.data?.statusMessage || '網站更新失敗，請稍後再試',
+            text: err.data?.message || '網站更新失敗，請稍後再試',
         })
     })
 }
@@ -194,7 +194,7 @@ function UpdateSiteMenu(menu: SiteMenu) {
         Swal.fire({
             icon: 'error',
             title: '頁籤更新失敗',
-            text: err.data?.statusMessage || '頁籤更新失敗，請稍後再試',
+            text: err.data?.message || '頁籤更新失敗，請稍後再試',
         })
     })
 }
@@ -230,7 +230,7 @@ function CreateSiteMenu() {
         Swal.fire({
             icon: 'error',
             title: '頁籤建立失敗',
-            text: err.data?.statusMessage || '頁籤建立失敗，請稍後再試',
+            text: err.data?.message || '頁籤建立失敗，請稍後再試',
         })
     })
 }
@@ -256,7 +256,7 @@ function DeleteSiteMenu(menu: SiteMenu) {
         Swal.fire({
             icon: 'error',
             title: '頁籤刪除失敗',
-            text: err.data?.statusMessage || '頁籤刪除失敗，請稍後再試',
+            text: err.data?.message || '頁籤刪除失敗，請稍後再試',
         })
     })
 }

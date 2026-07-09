@@ -72,7 +72,7 @@ function CheckApi() {
     $fetch('/api/check').catch((err) => {
         Swal.fire({
             icon: 'error',
-            title: err.statusMessage
+            title: err.message
         })
     })
 }
