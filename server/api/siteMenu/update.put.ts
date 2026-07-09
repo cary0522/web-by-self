@@ -1,6 +1,6 @@
 import { prisma } from '../../utils/prisma'
 import { requireAuth } from '../../utils/auth'
-import { requiresPageForViewType, isHomeViewType } from '../../utils/viewType'
+import { requiresPageForViewType } from '../../utils/viewType'
 
 defineRouteMeta({
     openAPI: {
@@ -28,9 +28,8 @@ export default defineEventHandler(async (event) => {
             statusMessage: '頁籤名稱為必填',
         })
     }
-    // 判斷是否需要新增 page 或需要 home layout page
+    // 判斷是否需要新增 page 
     const needsPage = body.viewTypeId ? await requiresPageForViewType(body.viewTypeId) : false
-    const needsHome = body.viewTypeId ? await isHomeViewType(body.viewTypeId) : false
 
     const res = await prisma.$transaction(async (tx) => {
         const currentMenu = await tx.siteMenu.findUnique({
@@ -47,8 +46,8 @@ export default defineEventHandler(async (event) => {
         }
 
         let pageId = currentMenu.pageId
-        // 如果需要 page 或 home layout page 但目前沒有 pageId，則建立新的 page
-        if ((needsPage || needsHome) && !pageId) {
+        // 如果需要 page 但目前沒有 pageId，則建立新的 page
+        if (needsPage && !pageId) {
             const page = await tx.page.create({
                 data: {
                     title: body.name,
@@ -60,18 +59,6 @@ export default defineEventHandler(async (event) => {
                 },
             })
             pageId = page.id
-
-            if (needsHome) {
-                await tx.pageSection.create({
-                    data: {
-                        pageId: page.id,
-                        type: 'home',
-                        title: body.name ?? null,
-                        sortOrder: 0,
-                        isEnabled: true,
-                    },
-                })
-            }
         }
 
         // 如果需要 page 且已有 pageId，則更新 page 內容
@@ -83,23 +70,6 @@ export default defineEventHandler(async (event) => {
                     content: body.content ?? undefined,
                 },
             })
-        }
-
-        if (needsHome && pageId) {
-            const sectionCount = await tx.pageSection.count({
-                where: { pageId },
-            })
-            if (sectionCount === 0) {
-                await tx.pageSection.create({
-                    data: {
-                        pageId,
-                        type: 'home',
-                        title: body.name ?? null,
-                        sortOrder: 0,
-                        isEnabled: true,
-                    },
-                })
-            }
         }
 
         return tx.siteMenu.update({
