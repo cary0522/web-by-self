@@ -1,7 +1,7 @@
 import { prisma } from './prisma'
 import { getPageId } from './page'
 
-export async function getSectionByPageId(domain: string, slug: string) {
+export async function getSectionByPageId(domain: string, slug: string, inEnabled: boolean | null = null) {
     if (!domain || !slug) {
         throw createError({
             statusCode: 400,
@@ -20,7 +20,7 @@ export async function getSectionByPageId(domain: string, slug: string) {
     const sections = await prisma.pageSection.findMany({
         where: {
             pageId: pageId,
-            isEnabled: true,
+            isEnabled: inEnabled ?? undefined,
         },
         orderBy: {
             sortOrder: 'asc',
