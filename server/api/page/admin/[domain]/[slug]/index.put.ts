@@ -1,7 +1,7 @@
-import { prisma } from '../../../../utils/prisma'
-import { requireAuth } from '../../../../utils/auth'
-import { getSiteByDomain } from '../../../../utils/site'
-import { saveUploadedFileToSite } from '../../../../utils/file'
+import { prisma } from '../../../../../utils/prisma'
+import { requireAuth } from '../../../../../utils/auth'
+import { getSiteByDomain } from '../../../../../utils/site'
+import { saveUploadedFileToSite } from '../../../../../utils/file'
 import type { H3Event, MultiPartData } from 'h3'
 
 type UpdatePagePayload = {

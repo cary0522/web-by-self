@@ -1,11 +1,10 @@
 import { getPageContent } from '../../../../utils/page'
-import { requireAuth } from '../../../../utils/auth'
 
 defineRouteMeta({
     openAPI: {
         tags: ['page'],
-        summary: '取得後台頁面內容',
-        description: '提供給管理者使用，需登入，可回傳所有狀態的 page',
+        summary: '取得前台頁面內容',
+        description: '取得前台頁面內容',
         parameters: [
             {
                 in: 'path',
@@ -21,14 +20,12 @@ defineRouteMeta({
     },
 })
 
-// /api/page/admin/:domain/:slug 取得後台頁面內容，需登入，可回傳所有狀態的 page
+// /api/page/:domain/:slug 取得前台頁面內容，只回傳啟用中的 page
 export default defineEventHandler(async (event) => {
-    requireAuth(event)
-
     const domain = getRouterParam(event, 'domain') as string
     const slug = getRouterParam(event, 'slug') as string
 
-    const page = await getPageContent(domain, slug)
+    const page = await getPageContent(domain, slug, true)
 
     return page
 })
