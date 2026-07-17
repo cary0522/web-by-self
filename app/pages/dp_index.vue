@@ -74,6 +74,7 @@ const siteMenuData = ref<SiteMenu>({
     name: '',
     slug: '',
     viewTypeId: 0,
+    sortOrder: 0,
     parentId: null,
     subPage: []
 })
@@ -84,6 +85,7 @@ function ResetSiteMenuData() {
         name: '',
         slug: '',
         viewTypeId: 0,
+        sortOrder: 0,
         parentId: null,
         subPage: []
     }
@@ -179,6 +181,7 @@ function UpdateSiteMenu(menu: SiteMenu) {
             name: menu.name,
             slug: menu.slug,
             viewTypeId: menu.viewTypeId,
+            sortOrder: menu.sortOrder,
             parentId: menu.parentId,
         }
     }).then((res) => {

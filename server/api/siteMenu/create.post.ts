@@ -67,6 +67,7 @@ export default defineEventHandler(async (event) => {
                 name: body.name,
                 slug: body.slug,
                 viewTypeId: body.viewTypeId,
+                sortOrder: body.sortOrder,
                 siteId: body.siteId,
                 parentId: body.parentId,
                 pageId,
@@ -80,6 +81,7 @@ export default defineEventHandler(async (event) => {
         name: res.name,
         slug: res.slug,
         viewTypeId: res.viewTypeId,
+        sortOrder: res.sortOrder,
         parentId: res.parentId,
         pageId: res.pageId,
     }

@@ -29,6 +29,7 @@ export default defineEventHandler(async (event) => {
         name: menu.name,
         slug: menu.slug,
         pageId: menu.pageId,
+        sortOrder: menu.sortOrder,
         viewTypeId: menu.viewTypeRelation?.id ?? 0,
         viewType: menu.viewTypeRelation?.name,
         subPage: siteMenus.filter(subMenu => subMenu.parentId == menu.id).map(subMenu => ({

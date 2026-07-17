@@ -80,6 +80,7 @@ export default defineEventHandler(async (event) => {
                 name: body.name,
                 slug: body.slug,
                 viewTypeId: body.viewTypeId,
+                sortOrder: body.sortOrder,
                 parentId: body.parentId,
                 pageId,
             },

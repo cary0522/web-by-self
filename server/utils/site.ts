@@ -30,6 +30,7 @@ export async function getSiteMenusBySiteId(siteId: number) {
       name: true,
       slug: true,
       pageId: true,
+      sortOrder: true,
       viewTypeRelation: {
         select: {
           id: true,

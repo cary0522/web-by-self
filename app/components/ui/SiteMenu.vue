@@ -12,6 +12,9 @@
                 {{ option.name }}
             </option>
         </select>
+        <label for="sortOrder">排序：
+            <input type="number" id="sortOrder" v-model="data.sortOrder" />
+        </label>
     </div>
 </template>
 
