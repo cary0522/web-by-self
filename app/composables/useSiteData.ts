@@ -1,4 +1,4 @@
-import type { SiteMenu } from '~/types/site-menu'
+import type { SiteMenu } from '~/shared/types/site-menu'
 
 export default function useSiteData() {
     const router = useRouter()

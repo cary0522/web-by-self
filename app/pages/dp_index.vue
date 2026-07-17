@@ -60,7 +60,7 @@
 
 <script setup lang="ts">
 import Swal from 'sweetalert2';
-import type { SiteMenu } from '~/types/site-menu';
+import type { SiteMenu } from '~/shared/types/site-menu';
 import useSiteData from '~/composables/useSiteData';
 import useOptions from '~/composables/useOptions'
 import { VIEW_TYPE } from '~/utils/enums'

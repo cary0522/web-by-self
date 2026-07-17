@@ -4,6 +4,7 @@ export interface SiteMenu {
   slug: string,
   viewTypeId: number,
   viewType?: string,
+  sortOrder: number,
   pageId?: number | null,
   parentId?: number | null,
   subPage: SiteMenu[]

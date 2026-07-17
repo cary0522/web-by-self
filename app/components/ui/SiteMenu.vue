@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { SiteMenu } from '~/types/site-menu'
+import type { SiteMenu } from '~/shared/types/site-menu'
 
 const props = defineProps<{
     data: SiteMenu

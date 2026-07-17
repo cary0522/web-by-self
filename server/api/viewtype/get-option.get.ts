@@ -1,4 +1,4 @@
-import type { ViewType } from '~/types/view-type'
+import type { ViewType } from '~/shared/types/view-type'
 
 defineRouteMeta({
     openAPI: {

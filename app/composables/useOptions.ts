@@ -1,4 +1,4 @@
-import type { ViewType } from '~/types/view-type'
+import type { ViewType } from '~/shared/types/view-type'
 
 export default function useOption() {
     const ViewTypeList = ref<ViewType[]>([])
