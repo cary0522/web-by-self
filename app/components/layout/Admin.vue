@@ -1,31 +1,50 @@
 <template>
-  <header class="fixed top-0 left-0 w-full h-20 z-50 bg-white shadow">
-    <div class="w-full h-20 flex justify-start items-center px-4">
-      <img :src="`/images/logo.webp`" alt="Logo" class="max-h-[100%] object-contain w-20" />
-    </div>
-  </header>
-  <main class="pt-20 pb-16 min-h-screen flex">
-    <div class="w-1/5 border min-h-screen flex flex-col px-2 py-2">
-      <p class="text-lg font-black ms-1">選單</p>
-      <template v-for="menu in siteMenuList">
-        <NuxtLink v-if="menu.viewType === VIEW_TYPE.HOME" :to="`/${props.siteRouteDomain}/setting/home`"
-          class="my-2 ms-2 hover:text-black hover:underline hover:scale-105 transition-all font-black text-lg">
-          {{ menu.name }}
+  <div class="min-h-screen bg-slate-50">
+    <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
+      <div class="flex h-20 items-center justify-between px-4 sm:px-6">
+        <NuxtLink to="/dp_index" class="flex items-center gap-3">
+          <img src="/images/logo.webp" alt="Web by Self" class="h-11 w-11 rounded-xl object-cover shadow-sm ring-1 ring-slate-200" />
+          <div>
+            <p class="font-extrabold tracking-tight text-slate-900">Web by Self</p>
+            <p class="text-xs text-slate-500">網站管理後台</p>
+          </div>
         </NuxtLink>
-        <NuxtLink v-else-if="menu.viewType === VIEW_TYPE.PARENT" to="#"
-          class="my-2 ms-2 font-black text-lg cursor-default">
-          {{ menu.name }}
-        </NuxtLink>
-        <NuxtLink v-for="subPage in menu.subPage" :key="subPage.id"
-          :to="`/${props.siteRouteDomain}/setting${normalizeSlug(subPage.slug)}`"
-          class="my-2 ms-4 hover:text-black hover:underline hover:scale-105 transition-all">{{
-            subPage.name }}
-        </NuxtLink>
-      </template>
-      <UiButton :clickFunction="LogOut" title="登出" class="my-2" />
-    </div>
-    <slot />
-  </main>
+        <span class="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+          管理員模式
+        </span>
+      </div>
+    </header>
+    <main class="mx-auto flex min-h-[calc(100vh-5rem)] max-w-[96rem] flex-col lg:flex-row">
+      <aside class="border-b border-slate-200 bg-white px-4 py-4 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+        <p class="mb-3 px-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">網站選單</p>
+        <nav class="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible" aria-label="管理選單">
+          <template v-for="menu in siteMenuList" :key="menu.id">
+            <NuxtLink v-if="menu.viewType === VIEW_TYPE.HOME" :to="`/${props.siteRouteDomain}/setting`"
+              class="shrink-0 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-700 hover:bg-primary-50 hover:text-primary-700"
+              active-class="bg-primary-50 text-primary-700">
+              {{ menu.name }}
+            </NuxtLink>
+            <p v-else-if="menu.viewType === VIEW_TYPE.PARENT"
+              class="shrink-0 px-3 pb-1 pt-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+              {{ menu.name }}
+            </p>
+            <NuxtLink v-for="subPage in menu.subPage.filter(item => item.slug)" :key="subPage.id"
+              :to="`/${props.siteRouteDomain}/setting${subPage.slug}`"
+              class="shrink-0 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-100 hover:text-slate-900 lg:pl-5"
+              active-class="bg-primary-50 text-primary-700">
+              {{ subPage.name }}
+            </NuxtLink>
+          </template>
+        </nav>
+        <div class="mt-4 border-t border-slate-100 pt-4 lg:mt-8">
+          <UiButton :click-function="LogOut" title="登出" variant="ghost" class="w-full" />
+        </div>
+      </aside>
+      <section class="min-w-0 flex-1">
+        <slot />
+      </section>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -39,8 +58,6 @@ const router = useRouter()
 const props = defineProps<{
   siteRouteDomain: string,
 }>()
-
-const normalizeSlug = (value: string) => value.startsWith('/') ? value : `/${value}`
 
 // 登出
 function LogOut() {

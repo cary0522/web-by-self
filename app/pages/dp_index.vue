@@ -1,59 +1,100 @@
 <template>
-    <LayoutAdmin :siteRouteDomain="siteRouteDomain">
-        <div class="wrap">
-            <h1 class="text-4xl font-bold w-full">管理者後台</h1>
-            <div class="w-full px-2 flex">
-                <div class="grow border min-h-screen">
-                    <div>
-                        <UiAreaTitle :title="'網站管理'"> </UiAreaTitle>
-                        <div class="w-full ps-4">
-                            <div class="my-1">
-                                <label for="siteName">網站名稱：</label>
-                                <input type="text" id="siteName" v-model="siteData.name" placeholder="網站名稱" />
-                            </div>
-                            <div class="my-1">
-                                <label for="siteDomain">網站域名：</label>
-                                <input type="text" id="siteDomain" v-model="siteData.domain" placeholder="網站域名" />
-                            </div>
-                        </div>
-                        <div class="w-full flex justify-center items-center">
-                            <UiButton :clickFunction="CreateSite" v-if="siteData.id === 0" title="建立網站" />
-                            <UiButton :clickFunction="UpdateSite" v-if="siteData.id !== 0" title="更新網站名稱" />
-                        </div>
-                    </div>
-                    <div v-if="siteData.id !== 0">
-                        <UiAreaTitle :title="'頁籤管理'"> </UiAreaTitle>
-                        <div v-for="menu in siteMenuList" v-if="siteMenuList.length > 0" :key="menu.slug"
-                            class="flex flex-wrap items-center">
-                            <UiSiteMenu :data="menu"></UiSiteMenu>
-                            <UiButton :clickFunction="() => UpdateSiteMenu(menu)" title="更新" />
-                            <UiButton :clickFunction="() => DeleteSiteMenu(menu)" title="刪除" />
-                            <div v-for="sub in menu.subPage" class="border w-full px-4 py-4 flex items-center">
-                                <UiSiteMenu :data="sub"></UiSiteMenu>
-                                <label for="parentPage">父頁籤：</label>
-                                <select name="parentPage" id="parentPage" v-model="sub.parentId">
-                                    <option v-for="option in parentList" :key="option.id" :value="option.id">
-                                        {{ option.name }}
-                                    </option>
-                                </select>
-                                <UiButton :clickFunction="() => UpdateSiteMenu(sub)" title="更新子頁籤" />
-                                <UiButton :clickFunction="() => DeleteSiteMenu(sub)" title="刪除子頁籤" />
-                            </div>
-                        </div>
-                        <UiAreaTitle :title="'新增頁籤'"> </UiAreaTitle>
-                        <div class="w-full flex">
-                            <UiSiteMenu :data="siteMenuData"></UiSiteMenu>
-                            <select name="parent" id="parent" v-model="siteMenuData.parentId"
-                                v-if="!isParent(siteMenuData.viewTypeId)">
-                                <option v-for="option in parentList" :key="option.id" :value="option.id">
-                                    {{ option.name }}
-                                </option>
-                            </select>
-                            <UiButton :clickFunction="CreateSiteMenu" title="新增頁籤" />
-                        </div>
-                    </div>
+    <LayoutAdmin :site-route-domain="siteRouteDomain">
+        <div class="page-shell">
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <p class="text-sm font-bold uppercase tracking-[0.18em] text-primary-600">Dashboard</p>
+                    <h1 class="mt-2 text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">網站設定</h1>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">管理網站基本資訊、導覽頁籤與頁面層級。</p>
                 </div>
+                <div v-if="siteList.length" class="flex items-center gap-2">
+                    <select v-model.number="siteData.id" aria-label="選擇站台" @change="SelectSite(siteData.id)">
+                        <option v-for="site in siteList" :key="site.id" :value="site.id">{{ site.name }}</option>
+                    </select>
+                    <UiButton title="新增站台" variant="secondary" :click-function="StartNewSite" />
+                </div>
+                <span v-if="siteData.id !== 0" class="inline-flex w-fit items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500"></span>網站已建立
+                </span>
             </div>
+
+            <section class="surface-card p-5 sm:p-7">
+                <UiAreaTitle title="網站基本資訊" />
+                <div class="grid gap-5 md:grid-cols-2">
+                    <label for="siteName" class="block">
+                        <span class="field-label">網站名稱</span>
+                        <input type="text" id="siteName" v-model="siteData.name" placeholder="例如：我的品牌網站" />
+                    </label>
+                    <label for="siteDomain" class="block">
+                        <span class="field-label">網站域名</span>
+                        <input type="text" id="siteDomain" v-model="siteData.domain" placeholder="例如：my-site" />
+                        <span class="mt-1.5 block text-xs text-slate-400">請使用簡短、容易辨識的英文代稱。</span>
+                    </label>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <UiButton v-if="siteData.id === 0" :click-function="CreateSite" title="建立網站" />
+                    <UiButton v-else :click-function="UpdateSite" title="儲存網站資訊" />
+                </div>
+            </section>
+
+            <template v-if="siteData.id !== 0">
+                <section class="surface-card mt-6 p-5 sm:p-7">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <UiAreaTitle title="頁籤管理" />
+                        <span class="text-sm text-slate-400">共 {{ siteMenuList.length }} 個主項目</span>
+                    </div>
+
+                    <div v-if="siteMenuList.length === 0" class="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-5 py-10 text-center">
+                        <p class="font-semibold text-slate-700">目前還沒有頁籤</p>
+                        <p class="mt-1 text-sm text-slate-500">從下方新增第一個網站導覽項目。</p>
+                    </div>
+
+                    <div v-else class="space-y-4">
+                        <article v-for="menu in siteMenuList" :key="menu.id" class="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 sm:p-5">
+                            <UiSiteMenu :data="menu" />
+                            <div class="mt-4 flex flex-wrap justify-end gap-2">
+                                <UiButton :click-function="() => UpdateSiteMenu(menu)" title="更新" variant="secondary" />
+                                <UiButton :click-function="() => DeleteSiteMenu(menu)" title="刪除" variant="danger" />
+                            </div>
+
+                            <div v-if="menu.subPage.length" class="mt-5 space-y-3 border-t border-slate-200 pt-5">
+                                <p class="text-xs font-bold uppercase tracking-wider text-slate-400">子頁籤</p>
+                                <div v-for="sub in menu.subPage" :key="sub.id" class="rounded-xl border border-slate-200 bg-white p-4">
+                                    <UiSiteMenu :data="sub" />
+                                    <div class="mt-4 grid items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                                        <label class="block">
+                                            <span class="field-label">所屬父頁籤</span>
+                                            <select name="parentPage" v-model="sub.parentId">
+                                                <option v-for="option in parentList" :key="option.id" :value="option.id">{{ option.name }}</option>
+                                            </select>
+                                        </label>
+                                        <div class="flex flex-wrap justify-end gap-2">
+                                            <UiButton :click-function="() => UpdateSiteMenu(sub)" title="更新子頁籤" variant="secondary" />
+                                            <UiButton :click-function="() => DeleteSiteMenu(sub)" title="刪除" variant="danger" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="surface-card mt-6 p-5 sm:p-7">
+                    <UiAreaTitle title="新增頁籤" />
+                    <UiSiteMenu :data="siteMenuData" />
+                    <div class="mt-4 grid items-end gap-4 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <label v-if="!isParent(siteMenuData.viewTypeId)" class="block">
+                            <span class="field-label">所屬父頁籤</span>
+                            <select name="parent" v-model="siteMenuData.parentId">
+                                <option :value="null">不指定</option>
+                                <option v-for="option in parentList" :key="option.id" :value="option.id">{{ option.name }}</option>
+                            </select>
+                        </label>
+                        <div v-else></div>
+                        <UiButton :click-function="CreateSiteMenu" title="新增頁籤" />
+                    </div>
+                </section>
+            </template>
         </div>
     </LayoutAdmin>
 </template>
@@ -64,17 +105,22 @@ import type { SiteMenu } from '~/shared/types/site-menu';
 import useSiteData from '~/composables/useSiteData';
 import useOptions from '~/composables/useOptions'
 import { VIEW_TYPE } from '~/utils/enums'
-const { siteData, siteMenuList, GetSiteData } = useSiteData()
+const { siteData, siteList, siteMenuList, GetSiteData, SelectSite } = useSiteData()
 const { ViewTypeList, GetViewTypeList } = useOptions()
 
 const siteRouteDomain = computed(() => siteData.value.domain.replace(/^\/+/, ''))
+function StartNewSite() {
+    siteData.value = { id: 0, name: '', domain: '' }
+    siteMenuList.value = []
+}
 // 單筆頁籤資料
 const siteMenuData = ref<SiteMenu>({
     id: 0,
     name: '',
-    slug: '',
+    slug: null,
     viewTypeId: 0,
     sortOrder: 0,
+    isEnabled: true,
     parentId: null,
     subPage: []
 })
@@ -83,9 +129,10 @@ function ResetSiteMenuData() {
     siteMenuData.value = {
         id: 0,
         name: '',
-        slug: '',
+        slug: null,
         viewTypeId: 0,
         sortOrder: 0,
+        isEnabled: true,
         parentId: null,
         subPage: []
     }
@@ -165,11 +212,14 @@ function UpdateSite() {
 }
 // 更新頁籤資料
 function UpdateSiteMenu(menu: SiteMenu) {
-    if (!menu.name || !menu.slug || menu.viewTypeId == 0) {
+    const viewType = ViewTypeList.value.find(item => item.id === menu.viewTypeId)?.name.toLowerCase()
+    const needsSlug = ['home', 'page', 'pdf'].includes(viewType || '')
+    const needsUrl = viewType === VIEW_TYPE.EXTERNAL
+    if (!menu.name || menu.viewTypeId === 0 || (needsSlug && !menu.slug) || (needsUrl && !menu.url)) {
         Swal.fire({
             icon: 'warning',
             title: '請填寫頁籤資訊',
-            text: '請輸入頁籤名稱、slug、view type',
+            text: '請確認頁籤名稱、類型及連結資料',
         })
         return
     }
@@ -183,6 +233,10 @@ function UpdateSiteMenu(menu: SiteMenu) {
             viewTypeId: menu.viewTypeId,
             sortOrder: menu.sortOrder,
             parentId: menu.parentId,
+            url: menu.url,
+            target: menu.target,
+            icon: menu.icon,
+            isEnabled: menu.isEnabled,
         }
     }).then((res) => {
         Swal.fire({
@@ -203,11 +257,15 @@ function UpdateSiteMenu(menu: SiteMenu) {
 }
 // 新增頁籤資料
 function CreateSiteMenu() {
-    if (!siteMenuData.value.name || !siteMenuData.value.slug || siteMenuData.value.viewTypeId == 0) {
+    const viewType = ViewTypeList.value.find(item => item.id === siteMenuData.value.viewTypeId)?.name.toLowerCase()
+    const needsSlug = ['home', 'page', 'pdf'].includes(viewType || '')
+    const needsUrl = viewType === VIEW_TYPE.EXTERNAL
+    if (!siteMenuData.value.name || siteMenuData.value.viewTypeId === 0
+        || (needsSlug && !siteMenuData.value.slug) || (needsUrl && !siteMenuData.value.url)) {
         Swal.fire({
             icon: 'warning',
             title: '請填寫頁籤資訊',
-            text: '請輸入頁籤名稱、slug、view type',
+            text: '請確認頁籤名稱、類型及連結資料',
         })
         return
     }
@@ -219,6 +277,10 @@ function CreateSiteMenu() {
             slug: siteMenuData.value.slug,
             viewTypeId: siteMenuData.value.viewTypeId,
             parentId: siteMenuData.value.parentId,
+            url: siteMenuData.value.url,
+            target: siteMenuData.value.target,
+            icon: siteMenuData.value.icon,
+            isEnabled: siteMenuData.value.isEnabled,
         }
     }).then((res) => {
         Swal.fire({

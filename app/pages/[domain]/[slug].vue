@@ -1,10 +1,16 @@
 <template>
     <LayoutUser>
         <UiNav :domain="domain"></UiNav>
-        <div class="px-4 py-2 text-sm text-gray-500">
-            {{ slug }}
+        <div class="page-shell">
+            <UiBreadcrumb :items="[{ label: slug }]" :home-link="`/${domain}`" />
+            <article class="surface-card mt-6 p-6 sm:p-10">
+                <div v-if="pageContent" class="prose-content" v-html="pageContent"></div>
+                <div v-else class="py-12 text-center">
+                    <p class="font-semibold text-slate-700">此頁面尚無內容</p>
+                    <p class="mt-1 text-sm text-slate-500">請稍後再回來看看。</p>
+                </div>
+            </article>
         </div>
-        <div v-html="pageContent"></div>
     </LayoutUser>
 </template>
 

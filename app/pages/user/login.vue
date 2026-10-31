@@ -1,21 +1,27 @@
 <template>
     <LayoutUser>
-        <div class="h-screen mt-24">
-            <h1 class="text-4xl font-bold mx-4">使用者登入畫面</h1>
-            <div class="w-full px-4 py-4">
-                <label for="userAccount" class="block w-full my-2">
-                    帳號：
-                    <input id="userAccount" type="text" placeholder="帳號或 Email" v-model="userData.account"
-                        class="border rounded px-1 py-1">
-                </label>
-                <label for="userPassword" class="block w-full my-2">
-                    密碼：
-                    <input id="userPassword" type="password" placeholder="密碼" v-model="userData.password"
-                        class="border rounded px-1 py-1">
-                </label>
-                <div class="w-full my-2 flex justify-center items-center">
-                    <UiButton :clickFunction="login" title="登入" />
+        <div class="bg-hero-glow px-4 py-12 sm:px-6 sm:py-20">
+            <div class="surface-card mx-auto w-full max-w-md p-6 sm:p-8">
+                <div class="mb-8 text-center">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-50 text-xl text-primary-700">↗</span>
+                    <h1 class="mt-4 text-3xl font-black tracking-tight text-slate-950">歡迎回來</h1>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">登入後繼續管理你的網站內容</p>
                 </div>
+                <form class="space-y-5" @submit.prevent="login">
+                <label for="userAccount" class="block">
+                    <span class="field-label">帳號或 Email</span>
+                    <input id="userAccount" type="text" placeholder="請輸入帳號或 Email" v-model="userData.account" autocomplete="username">
+                </label>
+                <label for="userPassword" class="block">
+                    <span class="field-label">密碼</span>
+                    <input id="userPassword" type="password" placeholder="請輸入密碼" v-model="userData.password" autocomplete="current-password">
+                </label>
+                <UiButton title="登入" type="submit" class="w-full" />
+                </form>
+                <p class="mt-6 text-center text-sm text-slate-500">
+                    還沒有帳號？
+                    <NuxtLink to="/user/register" class="font-semibold text-primary-700 hover:text-primary-800 hover:underline">立即免費註冊</NuxtLink>
+                </p>
             </div>
         </div>
     </LayoutUser>

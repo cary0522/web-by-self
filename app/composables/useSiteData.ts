@@ -8,12 +8,15 @@ export default function useSiteData() {
         name: '',
         domain: '',
     })
+    const siteList = ref<Array<{ id: number, name: string, domain: string }>>([])
     // 所有頁籤資料
     const siteMenuList = ref<SiteMenu[]>([])
     // 取得網站資訊
     async function GetSiteData() {
         try {
-            const res = await $fetch<{ id: number, name: string, domain: string } | null>('/api/site')
+            const sites = await $fetch<Array<{ id: number, name: string, domain: string }>>('/api/site/list')
+            siteList.value = sites
+            const res = sites.find(site => site.id === siteData.value.id) ?? sites[0] ?? null
             if (res) {
                 siteData.value.name = res.name
                 siteData.value.domain = res.domain
@@ -33,9 +36,17 @@ export default function useSiteData() {
             }
         }
     }
+    async function SelectSite(siteId: number) {
+        const site = siteList.value.find(item => item.id === siteId)
+        if (!site) return
+        Object.assign(siteData.value, site)
+        siteMenuList.value = await $fetch<SiteMenu[]>(`/api/siteMenu/${site.id}`)
+    }
     return {
         siteData,
+        siteList,
         siteMenuList,
-        GetSiteData
+        GetSiteData,
+        SelectSite,
     }
 }

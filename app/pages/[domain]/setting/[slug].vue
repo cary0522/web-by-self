@@ -1,14 +1,21 @@
 <template>
-    <LayoutAdmin :siteRouteDomain="String(domain)">
-        <div class="wrap">
-            <div class="px-4 py-2 text-sm text-gray-500">
-                {{ domain }} / {{ slug }}
+    <LayoutAdmin :site-route-domain="String(domain)">
+        <div class="page-shell">
+            <UiBreadcrumb :items="[{ label: '頁面管理', to: `/${domain}/setting` }, { label: String(slug) }]" home-link="/dp_index" home-text="後台" />
+            <div class="mb-6 mt-5">
+                <p class="text-sm font-semibold text-primary-600">{{ domain }}</p>
+                <h1 class="mt-1 text-3xl font-black tracking-tight text-slate-950">編輯「{{ slug }}」</h1>
+                <p class="mt-2 text-sm text-slate-500">編輯頁面內容，完成後記得儲存變更。</p>
             </div>
-            <ClientOnly>
-                <Ckeditor v-if="editor && editorConfig" :editor="editor" v-model="editorData" :config="editorConfig" />
-                <UiButton :click-function="SaveContent" :title="'儲存'"></UiButton>
+            <ClientOnly class="block">
+                <div v-if="editor && editorConfig" class="surface-card p-4 sm:p-6">
+                    <Ckeditor :editor="editor" v-model="editorData" :config="editorConfig" />
+                    <div class="mt-5 flex justify-end">
+                        <UiButton :click-function="SaveContent" title="儲存變更" />
+                    </div>
+                </div>
                 <template #fallback>
-                    <div class="p-4 text-sm text-gray-500">編輯器載入中...</div>
+                    <div class="surface-card p-8 text-center text-sm text-slate-500">編輯器載入中...</div>
                 </template>
             </ClientOnly>
         </div>
@@ -133,7 +140,7 @@ onMounted(async () => {
             previewsInData: true,
         },
         simpleUpload: {
-            uploadUrl: `${baseUrl}/api/file/editor/upload?domain=${domain}`,
+            uploadUrl: `${baseUrl}/api/file/editor/upload?domain=${domain}&pageId=${pageData.value?.id}`,
             withCredentials: true,
         },
         image: {

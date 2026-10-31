@@ -1,11 +1,11 @@
 <template>
-  <nav class="flex" aria-label="Breadcrumb">
-    <ol class="inline-flex items-center space-x-1 md:space-x-2">
+  <nav class="flex overflow-x-auto" aria-label="Breadcrumb">
+    <ol class="inline-flex items-center whitespace-nowrap">
       <!-- 首頁 -->
       <li v-if="showHome" class="inline-flex items-center">
         <NuxtLink
           :to="homeLink"
-          class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          class="inline-flex items-center text-sm font-medium text-slate-500 transition-colors hover:text-primary-700"
         >
           <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
@@ -18,7 +18,7 @@
       <li v-for="(item, index) in items" :key="index" class="inline-flex items-center">
         <!-- 分隔符 -->
         <svg
-          class="w-5 h-5 text-gray-400 mx-1"
+          class="mx-1 h-5 w-5 text-slate-300"
           fill="currentColor"
           viewBox="0 0 20 20"
         >
@@ -33,14 +33,14 @@
         <NuxtLink
           v-if="item.to && index !== items.length - 1"
           :to="item.to"
-          class="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+          class="text-sm font-medium text-slate-500 transition-colors hover:text-primary-700"
         >
           {{ item.label }}
         </NuxtLink>
         <span
           v-else
           class="text-sm font-medium"
-          :class="index === items.length - 1 ? 'text-gray-900' : 'text-gray-500'"
+          :class="index === items.length - 1 ? 'text-slate-900' : 'text-slate-500'"
         >
           {{ item.label }}
         </span>
