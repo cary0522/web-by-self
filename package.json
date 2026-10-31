@@ -10,7 +10,9 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "nuxi typecheck"
+    "typecheck": "nuxi typecheck",
+    "test": "node --test server/**/*.test.ts",
+    "test:watch": "node --test --watch server/**/*.test.ts"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-image": "^48.2.0",

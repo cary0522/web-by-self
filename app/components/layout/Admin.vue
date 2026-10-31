@@ -3,19 +3,22 @@
     <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl">
       <div class="flex h-20 items-center justify-between px-4 sm:px-6">
         <NuxtLink to="/dp_index" class="flex items-center gap-3">
-          <img src="/images/logo.webp" alt="Web by Self" class="h-11 w-11 rounded-xl object-cover shadow-sm ring-1 ring-slate-200" />
+          <img src="/images/logo.webp" alt="Web by Self"
+            class="h-11 w-11 rounded-xl object-cover shadow-sm ring-1 ring-slate-200" />
           <div>
             <p class="font-extrabold tracking-tight text-slate-900">Web by Self</p>
             <p class="text-xs text-slate-500">網站管理後台</p>
           </div>
         </NuxtLink>
-        <span class="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
+        <span
+          class="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">
           管理員模式
         </span>
       </div>
     </header>
     <main class="mx-auto flex min-h-[calc(100vh-5rem)] max-w-[96rem] flex-col lg:flex-row">
-      <aside class="border-b border-slate-200 bg-white px-4 py-4 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+      <aside
+        class="border-b border-slate-200 bg-white px-4 py-4 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:w-64 lg:shrink-0 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
         <p class="mb-3 px-3 text-xs font-bold uppercase tracking-[0.18em] text-slate-400">網站選單</p>
         <nav class="flex gap-2 overflow-x-auto lg:flex-col lg:overflow-visible" aria-label="管理選單">
           <template v-for="menu in siteMenuList" :key="menu.id">
@@ -73,16 +76,8 @@ function LogOut() {
   })
 }
 onMounted(() => {
-  if (!adminStore.isAdmin) {
-    Swal.fire({
-      icon: 'warning',
-      title: '請先登入',
-      timer: 1500,
-      showConfirmButton: false,
-    }).then(() => {
-      router.push('/user/login')
-    })
-  }
+  // 登入狀態已由全域路由守衛（app/middleware/auth.global.ts）於進入頁面前確認，
+  // 這裡只需要載入頁面所需的網站資料。
   GetSiteData()
 })
 </script>
