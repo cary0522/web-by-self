@@ -19,6 +19,7 @@ model User {
   email     String?  @unique
   name      String?
   role      Int      @default(1)
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now()) @map("CreatedAt")
   updatedAt DateTime @updatedAt @map("UpdatedAt")
 
@@ -29,8 +30,15 @@ model User {
   createdSiteMenus SiteMenu[] @relation("SiteMenuCreatedBy")
 
   // 關聯到 Page
-  createdPages Page[] @relation("CreatedPages")
-  updatedPages Page[] @relation("UpdatedPages")
+  createdPages         Page[]         @relation("CreatedPages")
+  updatedPages         Page[]         @relation("UpdatedPages")
+  archivedPages        Page[]         @relation("ArchivedPages")
+  uploadedFiles        File[]         @relation("FileUploadedBy")
+  deletedFiles         File[]         @relation("FileDeletedBy")
+  createdAnnouncements Announcement[] @relation("AnnouncementCreatedBy")
+  updatedAnnouncements Announcement[] @relation("AnnouncementUpdatedBy")
+  deletedAnnouncements Announcement[] @relation("AnnouncementDeletedBy")
+  deletedSiteMenus     SiteMenu[]     @relation("SiteMenuDeletedBy")
 
   @@map("Users")
 }
@@ -39,22 +47,21 @@ model User {
 model Site {
   id     Int    @id @default(autoincrement())
   name   String @db.VarChar(200)
-  domain String @db.VarChar(255)
+  domain String @unique @db.VarChar(255)
 
-  createdById Int?
+  createdById Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  createdBy User?      @relation("SiteCreatedBy", fields: [createdById], references: [id])
-  menus     SiteMenu[]
-  pages     Page[]
-  files     File[]
+  createdBy     User           @relation("SiteCreatedBy", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  menus         SiteMenu[]
+  pages         Page[]
+  files         File[]
+  announcements Announcement[]
 
   @@index([createdById])
   @@map("Sites")
 }
-
-
 
 // 各頁面內容，包含標題、內容、狀態等，使用 slug 作為唯一識別，方便前台路由使用
 model Page {
@@ -65,7 +72,7 @@ model Page {
 
   // 關聯檔案
   relatedFileID Int?  @map("RelatedFileID")
-  file          File? @relation("PageFiles", fields: [relatedFileID], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  file          File? @relation("PagePrimaryFile", fields: [siteId, relatedFileID], references: [siteId, id], onDelete: NoAction, onUpdate: NoAction)
 
   // 建立者與更新者
   createdBy Int?  @map("CreatedBy")
@@ -74,35 +81,78 @@ model Page {
   updatedBy Int?  @map("UpdatedBy")
   updater   User? @relation("UpdatedPages", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
+  archivedAt DateTime? @map("ArchivedAt")
+  archivedBy Int?      @map("ArchivedBy")
+  archiver   User?     @relation("ArchivedPages", fields: [archivedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
   createdAt DateTime @default(now()) @map("CreatedAt")
   updatedAt DateTime @updatedAt @map("UpdatedAt")
 
   // 關聯到 Site
-  siteId   Int           @map("SiteID")
-  site     Site          @relation(fields: [siteId], references: [id])
+  siteId     Int           @map("SiteID")
+  site       Site          @relation(fields: [siteId], references: [id])
   // 一筆 Page 對應一筆 SiteMenu（page/pdf 類型由頁籤建立）
-  siteMenu SiteMenu?     @relation("SiteMenuPage")
-  sections PageSection[]
+  siteMenu   SiteMenu?     @relation("SiteMenuPage")
+  sections   PageSection[]
+  fileUsages PageFile[]
 
+  @@unique([siteId, id])
   @@index([siteId])
+  @@index([archivedBy])
   @@map("Pages")
 }
 
 // 上傳檔案集中管理，包含各頁面上傳的附檔，也包含單獨檔案頁面的檔案
 model File {
-  id         Int      @id @default(autoincrement()) @map("ID")
-  name       String   @map("Name")
-  path       String   @map("Path")
-  uploadedBy Int?     @map("UploadedBy")
-  uploadedAt DateTime @default(now()) @map("UploadedAt")
-  pages      Page[]   @relation("PageFiles")
+  id         Int        @id @default(autoincrement()) @map("ID")
+  name       String     @map("Name") @db.VarChar(255)
+  path       String     @unique @map("Path") @db.VarChar(500)
+  category   String     @default("file") @map("Category") @db.VarChar(20)
+  mimeType   String?    @map("MimeType") @db.VarChar(150)
+  sizeBytes  Int?       @map("SizeBytes")
+  sha256     String?    @map("Sha256") @db.Char(64)
+  isPublic   Boolean    @default(false) @map("IsPublic")
+  uploadedBy Int?       @map("UploadedBy")
+  uploadedAt DateTime   @default(now()) @map("UploadedAt")
+  updatedAt  DateTime   @updatedAt @map("UpdatedAt")
+  deletedAt  DateTime?  @map("DeletedAt")
+  deletedBy  Int?       @map("DeletedBy")
+  uploader   User?      @relation("FileUploadedBy", fields: [uploadedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  deleter    User?      @relation("FileDeletedBy", fields: [deletedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  pages      Page[]     @relation("PagePrimaryFile")
+  usages     PageFile[]
 
   // 關聯到 Site
   siteId Int  @map("SiteID")
   site   Site @relation(fields: [siteId], references: [id])
 
+  @@unique([siteId, id])
   @@index([siteId])
+  @@index([uploadedBy])
+  @@index([deletedBy])
+  @@index([siteId, isPublic, deletedAt])
   @@map("Files")
+}
+
+// 記錄附件、編輯器圖片、區塊素材等實際引用，避免只能從 HTML 或 JSON 猜測檔案用途。
+model PageFile {
+  id        Int      @id @default(autoincrement()) @map("ID")
+  siteId    Int      @map("SiteID")
+  pageId    Int      @map("PageID")
+  fileId    Int      @map("FileID")
+  sectionId Int?     @map("SectionID")
+  usage     String   @default("attachment") @map("Usage") @db.VarChar(30)
+  createdAt DateTime @default(now()) @map("CreatedAt")
+
+  page    Page         @relation(fields: [siteId, pageId], references: [siteId, id], onDelete: Cascade, onUpdate: Cascade)
+  file    File         @relation(fields: [siteId, fileId], references: [siteId, id], onDelete: Cascade, onUpdate: Cascade)
+  section PageSection? @relation(fields: [pageId, sectionId], references: [pageId, id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([pageId, fileId, usage, sectionId])
+  @@index([fileId])
+  @@index([sectionId])
+  @@index([siteId])
+  @@map("PageFiles")
 }
 
 // 可以有的畫面呈現類型
@@ -123,7 +173,7 @@ model PageSection {
 
   type     String  @map("Type") @db.VarChar(50)
   title    String? @map("Title") @db.VarChar(200)
-  bodyJson Json?   @map("BodyJson")
+  bodyJson Json    @map("BodyJson")
 
   sortOrder Int     @default(0) @map("SortOrder")
   isEnabled Boolean @default(true) @map("IsEnabled")
@@ -131,11 +181,41 @@ model PageSection {
   createdAt DateTime @default(now()) @map("CreatedAt")
   updatedAt DateTime @updatedAt @map("UpdatedAt")
 
-  page Page @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  page       Page       @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  fileUsages PageFile[]
 
+  @@unique([pageId, id])
   @@index([pageId])
+  @@index([pageId, isEnabled, sortOrder, id])
   @@map("PageSections")
 }
+
+// 可由首頁 announcement 區塊依站台與發布時間讀取的正式公告資料。
+model Announcement {
+  id          Int       @id @default(autoincrement()) @map("ID")
+  siteId      Int       @map("SiteID")
+  title       String    @map("Title") @db.VarChar(200)
+  content     String?   @map("Content") @db.MediumText
+  isEnabled   Boolean   @default(true) @map("IsEnabled")
+  publishedAt DateTime  @default(now()) @map("PublishedAt")
+  expiresAt   DateTime? @map("ExpiresAt")
+  createdBy   Int?      @map("CreatedBy")
+  updatedBy   Int?      @map("UpdatedBy")
+  createdAt   DateTime  @default(now()) @map("CreatedAt")
+  updatedAt   DateTime  @updatedAt @map("UpdatedAt")
+  deletedAt   DateTime? @map("DeletedAt")
+  deletedBy   Int?      @map("DeletedBy")
+
+  site    Site  @relation(fields: [siteId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  creator User? @relation("AnnouncementCreatedBy", fields: [createdBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  updater User? @relation("AnnouncementUpdatedBy", fields: [updatedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  deleter User? @relation("AnnouncementDeletedBy", fields: [deletedBy], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([siteId, isEnabled, deletedAt, publishedAt])
+  @@index([deletedBy])
+  @@map("Announcements")
+}
+
 // SiteMenu - 網站菜單，包含菜單名稱、路由、類型、目標等資訊，使用 siteId 和 routePath 作為唯一識別，方便前台路由使用
 model SiteMenu {
   id       Int  @id @default(autoincrement())
@@ -143,10 +223,13 @@ model SiteMenu {
   parentId Int? // 用於多層級菜單結構
   pageId   Int? @unique // 關聯到 Page，當 viewType 是 page 時使用
 
-  name String @db.VarChar(200)
-  slug String @db.VarChar(200)
+  name       String  @db.VarChar(200)
+  // external / parent 可不使用站內路由；有值時一律儲存為 `/segment` 格式。
+  slug       String? @db.VarChar(200)
+  // 僅未刪除的 Menu 會有值，讓 Soft Delete 後可重複使用原 slug
+  activeSlug String? @db.VarChar(200)
 
-  viewTypeId Int? // FK to ViewType.id
+  viewTypeId Int // FK to ViewType.id
 
   icon      String? @db.VarChar(100)
   sortOrder Int     @default(0)
@@ -156,23 +239,30 @@ model SiteMenu {
   target String? @db.VarChar(20) // _self / _blank
 
   createdById Int?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isDeleted   Boolean  @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isDeleted   Boolean   @default(false)
+  deletedAt   DateTime?
+  deletedById Int?
 
   site     Site       @relation(fields: [siteId], references: [id], onDelete: Cascade)
-  parent   SiteMenu?  @relation("SiteMenuToSiteMenu", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent   SiteMenu?  @relation("SiteMenuToSiteMenu", fields: [siteId, parentId], references: [siteId, id], onDelete: NoAction, onUpdate: NoAction)
   children SiteMenu[] @relation("SiteMenuToSiteMenu")
 
-  page      Page? @relation("SiteMenuPage", fields: [pageId], references: [id], onDelete: SetNull)
+  page      Page? @relation("SiteMenuPage", fields: [siteId, pageId], references: [siteId, id], onDelete: NoAction, onUpdate: NoAction)
   createdBy User? @relation("SiteMenuCreatedBy", fields: [createdById], references: [id])
+  deletedBy User? @relation("SiteMenuDeletedBy", fields: [deletedById], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  viewTypeRelation ViewType? @relation("SiteMenuViewType", fields: [viewTypeId], references: [id], onDelete: SetNull)
+  viewTypeRelation ViewType @relation("SiteMenuViewType", fields: [viewTypeId], references: [id], onDelete: Restrict)
 
+  @@unique([siteId, activeSlug])
+  @@unique([siteId, id])
+  @@unique([siteId, pageId])
   @@index([siteId])
+  @@index([siteId, isDeleted, isEnabled, sortOrder, id])
   @@index([parentId])
   @@index([createdById])
+  @@index([deletedById])
   @@index([isDeleted])
-  @@unique([siteId, slug])
   @@map("SiteMenus")
 }
