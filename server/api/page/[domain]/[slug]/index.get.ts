@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     const domain = getRouterParam(event, 'domain') as string
     const slug = getRouterParam(event, 'slug') as string
 
-    const page = await getPageContent(domain, slug, true)
+    const page = await getPageContent(domain, slug, 'public')
 
     return page
 })

@@ -1,7 +1,4 @@
-import { getFileRecord } from '../../../utils/file'
-import { join } from 'node:path'
-import { access } from 'node:fs/promises'
-import { createReadStream } from 'node:fs'
+import { createStoredFileStream, getAccessibleFileRecord, resolveStoredFilePath } from '../../../utils/file'
 import { sendStream } from 'h3'
 
 defineRouteMeta({
@@ -25,19 +22,17 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: 'file id 格式錯誤' })
     }
 
-    const file = await getFileRecord(id)
+    const file = await getAccessibleFileRecord(event, id)
     if (!file) {
         throw createError({ statusCode: 404, message: '找不到檔案' })
     }
 
-    const safeRelativePath = file.path.replace(/^\//, '')
-    const absolutePath = join(process.cwd(), 'public', safeRelativePath)
-    try {
-        await access(absolutePath)
-    } catch {
-        throw createError({ statusCode: 404, message: '實體檔案不存在' })
-    }
+    const absolutePath = await resolveStoredFilePath(file.path)
+    const encodedFileName = encodeURIComponent(file.name)
 
-    event.res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(file.name)}"`)
-    return await sendStream(event, createReadStream(absolutePath))
+    event.res.setHeader('Content-Type', 'application/octet-stream')
+    event.res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodedFileName}`)
+    event.res.setHeader('X-Content-Type-Options', 'nosniff')
+    event.res.setHeader('Cache-Control', 'private, no-store')
+    return await sendStream(event, createStoredFileStream(absolutePath))
 })

@@ -1,4 +1,9 @@
-import { getFileRecord, getFilePreviewType } from '../../../utils/file'
+import {
+    getFileContentPath,
+    getFileDownloadPath,
+    getFilePreviewType,
+    getAccessibleFileRecord,
+} from '../../../utils/file'
 
 defineRouteMeta({
     openAPI: {
@@ -21,21 +26,23 @@ export default defineEventHandler(async (event) => {
         throw createError({ statusCode: 400, message: 'file id 格式錯誤' })
     }
 
-    const file = await getFileRecord(id)
+    const file = await getAccessibleFileRecord(event, id)
     if (!file) {
         throw createError({ statusCode: 404, message: '找不到檔案' })
     }
 
     const previewType = getFilePreviewType(file.path)
     const origin = getRequestURL(event).origin
+    const contentPath = getFileContentPath(file.id)
+    const downloadPath = getFileDownloadPath(file.id)
 
     return {
         id: file.id,
         name: file.name,
-        path: file.path,
+        path: previewType ? contentPath : downloadPath,
         previewable: previewType !== null,
         previewType,
-        previewUrl: previewType ? `${origin}${file.path}` : null,
-        downloadUrl: `${origin}/api/file/download/${file.id}`,
+        previewUrl: previewType ? `${origin}${contentPath}` : null,
+        downloadUrl: `${origin}${downloadPath}`,
     }
 })

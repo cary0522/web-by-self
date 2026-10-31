@@ -1,4 +1,5 @@
 import type { ViewType } from '~/shared/types/view-type'
+import { requireAdmin } from '../../utils/auth'
 
 defineRouteMeta({
     openAPI: {
@@ -8,8 +9,13 @@ defineRouteMeta({
     },
 })
 
-export default defineEventHandler(async () => {
-    const res = await prisma.viewType.findMany()
+export default defineEventHandler(async (event) => {
+    await requireAdmin(event)
+
+    const res = await prisma.viewType.findMany({
+        where: { name: { in: ['home', 'page', 'pdf', 'parent', 'external'] } },
+        orderBy: { id: 'asc' },
+    })
 
     return res as ViewType[]
 })

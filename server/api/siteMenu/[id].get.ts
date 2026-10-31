@@ -4,7 +4,7 @@ defineRouteMeta({
     openAPI: {
         tags: ['siteMenu'],
         summary: '取得網站 menu 設定',
-        description: '包含 parent 與 home 的 menu，並且包含 subPage 的 menu',
+        description: '包含所有根頁籤、停用狀態及任意深度的 subPage 階層',
         parameters: [
             {
                 in: 'path',
@@ -17,29 +17,13 @@ defineRouteMeta({
 
 // /api/siteMenu/:id 取得網站 menu 設定
 export default defineEventHandler(async (event) => {
-    requireAuth(event)
+    const authUser = await requireAdmin(event)
     const siteId = Number(getRouterParam(event, 'id'))
+    if (!Number.isInteger(siteId) || siteId <= 0) {
+        throw createError({ statusCode: 400, message: 'site ID 格式錯誤' })
+    }
 
-    const siteMenus = await getSiteMenusBySiteId(siteId)
+    await requireSiteOwnerById(authUser.id, siteId)
 
-    return siteMenus.filter(menu => (
-        menu.viewTypeRelation?.name === 'parent' || menu.viewTypeRelation?.name === 'home'
-    )).map(menu => ({
-        id: menu.id,
-        name: menu.name,
-        slug: menu.slug,
-        pageId: menu.pageId,
-        sortOrder: menu.sortOrder,
-        viewTypeId: menu.viewTypeRelation?.id ?? 0,
-        viewType: menu.viewTypeRelation?.name,
-        subPage: siteMenus.filter(subMenu => subMenu.parentId == menu.id).map(subMenu => ({
-            id: subMenu.id,
-            name: subMenu.name,
-            slug: subMenu.slug,
-            pageId: subMenu.pageId,
-            viewTypeId: subMenu.viewTypeRelation?.id ?? 0,
-            viewType: subMenu.viewTypeRelation?.name,
-            parentId: subMenu.parentId,
-        }))
-    }))
+    return getSiteMenusBySiteId(siteId, { includeDisabled: true })
 })

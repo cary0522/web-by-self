@@ -1,6 +1,15 @@
 import { prisma } from '../../utils/prisma'
-import { requireAuth } from '../../utils/auth'
-import { requiresPageForViewType } from '../../utils/viewType'
+import { requireAdmin } from '../../utils/auth'
+import {
+    assertHomeMenuAvailable,
+    assertValidMenuParent,
+    isUniqueConstraintError,
+    lockSiteMenuHierarchy,
+    parseSiteMenuFields,
+    parseSiteMenuDestination,
+    requireObjectBody,
+} from '../../utils/site-menu'
+import { viewTypeRequiresPage } from '../../utils/viewType'
 
 defineRouteMeta({
     openAPI: {
@@ -12,8 +21,8 @@ defineRouteMeta({
 
 // /api/siteMenu/update 更新網站設定
 export default defineEventHandler(async (event) => {
-    requireAuth(event)
-    const body = await readBody(event)
+    const authUser = await requireAdmin(event)
+    const body = requireObjectBody(await readBody<unknown>(event))
 
     if (!body.menuId) {
         throw createError({
@@ -22,77 +31,127 @@ export default defineEventHandler(async (event) => {
         })
     }
 
-    if (!body.name) {
-        throw createError({
-            statusCode: 400,
-            message: '頁籤名稱為必填',
-        })
+    const menuId = Number(body.menuId)
+    if (!Number.isInteger(menuId) || menuId <= 0) {
+        throw createError({ statusCode: 400, message: '頁籤 ID 格式錯誤' })
     }
-    // 判斷是否需要新增 page 
-    const needsPage = body.viewTypeId ? await requiresPageForViewType(body.viewTypeId) : false
+
+    const ownedMenu = await requireSiteMenuOwner(authUser.id, menuId)
+    const menuFields = parseSiteMenuFields(body)
+    const parentId = body.parentId === undefined || body.parentId === null || body.parentId === ''
+        ? null
+        : Number(body.parentId)
+    if (parentId !== null) {
+        if (!Number.isInteger(parentId) || parentId <= 0) {
+            throw createError({ statusCode: 400, message: '父層頁籤 ID 格式錯誤' })
+        }
+    }
 
     const res = await prisma.$transaction(async (tx) => {
+        await lockSiteMenuHierarchy(tx, ownedMenu.siteId)
+
         const currentMenu = await tx.siteMenu.findUnique({
             where: {
-                id: body.menuId,
+                id: menuId,
             },
         })
 
-        if (!currentMenu) {
+        if (!currentMenu || currentMenu.isDeleted) {
             throw createError({
                 statusCode: 404,
                 message: '頁籤不存在',
             })
         }
 
-        let pageId = currentMenu.pageId
-        // 如果需要 page 但目前沒有 pageId，則建立新的 page
-        if (needsPage && !pageId) {
-            const page = await tx.page.create({
-                data: {
-                    title: body.name,
-                    content: needsPage ? body.content ?? null : null,
-                    status: 1,
-                    siteId: currentMenu.siteId,
-                    createdBy: currentMenu.createdById,
-                    updatedBy: currentMenu.createdById,
+        const [viewType, siteMenus] = await Promise.all([
+            tx.viewType.findUnique({
+                where: { id: menuFields.viewTypeId },
+                select: { name: true },
+            }),
+            tx.siteMenu.findMany({
+                where: { siteId: currentMenu.siteId, isDeleted: false },
+                select: {
+                    id: true,
+                    parentId: true,
+                    viewTypeRelation: { select: { name: true } },
                 },
-            })
-            pageId = page.id
+            }),
+        ])
+        if (!viewType) {
+            throw createError({ statusCode: 400, message: 'viewType 不存在' })
         }
+        assertValidMenuParent(siteMenus, parentId, menuId)
+        assertHomeMenuAvailable(siteMenus, viewType.name, menuId)
+        const destination = parseSiteMenuDestination(body, viewType.name)
 
-        // 如果需要 page 且已有 pageId，則更新 page 內容
-        if (needsPage && pageId) {
+        const needsPage = viewTypeRequiresPage(viewType.name)
+
+        let pageId = currentMenu.pageId
+        if (needsPage) {
+            if (pageId) {
+                await tx.page.update({
+                    where: { id: pageId },
+                    data: {
+                        title: menuFields.name,
+                        content: menuFields.hasContent ? menuFields.content : undefined,
+                        updatedBy: authUser.id,
+                    },
+                })
+            } else {
+                const page = await tx.page.create({
+                    data: {
+                        title: menuFields.name,
+                        content: menuFields.content,
+                        status: 1,
+                        siteId: currentMenu.siteId,
+                        createdBy: authUser.id,
+                        updatedBy: authUser.id,
+                    },
+                })
+                pageId = page.id
+            }
+        } else if (pageId) {
+            // A Page is archived and detached when the selected ViewType no longer uses one.
             await tx.page.update({
                 where: { id: pageId },
-                data: {
-                    title: body.name,
-                    content: body.content ?? undefined,
-                },
+                data: { status: 0, updatedBy: authUser.id, archivedAt: new Date(), archivedBy: authUser.id },
             })
+            pageId = null
         }
 
         return tx.siteMenu.update({
             where: {
-                id: body.menuId,
+                id: menuId,
             },
             data: {
-                name: body.name,
-                slug: body.slug,
-                viewTypeId: body.viewTypeId,
-                sortOrder: body.sortOrder,
-                parentId: body.parentId,
+                name: menuFields.name,
+                ...destination,
+                viewTypeId: menuFields.viewTypeId,
+                sortOrder: menuFields.sortOrder,
+                isEnabled: menuFields.isEnabled,
+                icon: menuFields.icon,
+                parentId,
                 pageId,
             },
         })
+    }).catch((error: unknown) => {
+        if (isUniqueConstraintError(error)) {
+            throw createError({ statusCode: 409, message: '此網站已存在相同的頁籤 slug' })
+        }
+        throw error
     })
 
     return {
         id: res.id,
         name: res.name,
         slug: res.slug,
+        url: res.url,
+        target: res.target,
+        icon: res.icon,
         viewTypeId: res.viewTypeId,
         parentId: res.parentId,
         pageId: res.pageId,
+        sortOrder: res.sortOrder,
+        isEnabled: res.isEnabled,
     }
 })

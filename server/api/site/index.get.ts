@@ -10,7 +10,7 @@ defineRouteMeta({
 
 // /api/site GET 取得網站設定
 export default defineEventHandler(async (event) => {
-    const authUser = requireAuth(event)
+    const authUser = await requireAdmin(event)
 
     const siteConfig = await getSiteByCreatedById(authUser.id)
 

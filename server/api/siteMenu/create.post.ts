@@ -1,6 +1,15 @@
 import { prisma } from '../../utils/prisma'
-import { requireAuth } from '../../utils/auth'
-import { requiresPageForViewType } from '../../utils/viewType'
+import { requireAdmin } from '../../utils/auth'
+import {
+    assertHomeMenuAvailable,
+    assertValidMenuParent,
+    isUniqueConstraintError,
+    lockSiteMenuHierarchy,
+    parseSiteMenuFields,
+    parseSiteMenuDestination,
+    requireObjectBody,
+} from '../../utils/site-menu'
+import { viewTypeRequiresPage } from '../../utils/viewType'
 
 defineRouteMeta({
     openAPI: {
@@ -12,48 +21,68 @@ defineRouteMeta({
 
 // /api/siteMenu/create 建立網站 menu 設定
 export default defineEventHandler(async (event) => {
-    const authUser = requireAuth(event)
-    const body = await readBody(event)
+    const authUser = await requireAdmin(event)
+    const body = requireObjectBody(await readBody<unknown>(event))
+    const menuFields = parseSiteMenuFields(body)
 
-
-    if (!body.name) {
-        throw createError({
-            statusCode: 400,
-            message: '網站名稱為必填',
-        })
-    }
-    if (!body.slug) {
-        throw createError({
-            statusCode: 400,
-            message: '網站 slug 為必填',
-        })
-    }
-    if (body.viewTypeId == 0) {
-        throw createError({
-            statusCode: 400,
-            message: '網站 viewType 為必填',
-        })
-    }
     if (!body.siteId) {
         throw createError({
             statusCode: 400,
             message: '網站 ID 為必填',
         })
     }
-    // 判斷是否需要新增 page 或 home layout page
-    const needsPage = await requiresPageForViewType(body.viewTypeId)
+
+    const siteId = Number(body.siteId)
+    if (!Number.isInteger(siteId) || siteId <= 0) {
+        throw createError({ statusCode: 400, message: '網站 ID 格式錯誤' })
+    }
+
+    await requireSiteOwnerById(authUser.id, siteId)
+
+    const parentId = body.parentId === undefined || body.parentId === null || body.parentId === ''
+        ? null
+        : Number(body.parentId)
+    if (parentId !== null) {
+        if (!Number.isInteger(parentId) || parentId <= 0) {
+            throw createError({ statusCode: 400, message: '父層頁籤 ID 格式錯誤' })
+        }
+    }
 
     const res = await prisma.$transaction(async (tx) => {
+        await lockSiteMenuHierarchy(tx, siteId)
+
+        const [viewType, siteMenus] = await Promise.all([
+            tx.viewType.findUnique({
+                where: { id: menuFields.viewTypeId },
+                select: { name: true },
+            }),
+            tx.siteMenu.findMany({
+                where: { siteId, isDeleted: false },
+                select: {
+                    id: true,
+                    parentId: true,
+                    viewTypeRelation: { select: { name: true } },
+                },
+            }),
+        ])
+        if (!viewType) {
+            throw createError({ statusCode: 400, message: 'viewType 不存在' })
+        }
+        assertValidMenuParent(siteMenus, parentId)
+        assertHomeMenuAvailable(siteMenus, viewType.name)
+        const destination = parseSiteMenuDestination(body, viewType.name)
+
+        const needsPage = viewTypeRequiresPage(viewType.name)
         let pageId: number | null = null
 
         // 如果需要 page，建立新的 page
         if (needsPage) {
             const page = await tx.page.create({
                 data: {
-                    title: body.name,
-                    content: needsPage ? body.content ?? null : null,
+                    title: menuFields.name,
+                    content: menuFields.content,
                     status: 1,
-                    siteId: body.siteId,
+                    siteId,
                     createdBy: authUser.id,
                     updatedBy: authUser.id,
                 },
@@ -64,24 +93,35 @@ export default defineEventHandler(async (event) => {
 
         return tx.siteMenu.create({
             data: {
-                name: body.name,
-                slug: body.slug,
-                viewTypeId: body.viewTypeId,
-                sortOrder: body.sortOrder,
-                siteId: body.siteId,
-                parentId: body.parentId,
+                name: menuFields.name,
+                ...destination,
+                viewTypeId: menuFields.viewTypeId,
+                sortOrder: menuFields.sortOrder,
+                isEnabled: menuFields.isEnabled ?? true,
+                icon: menuFields.icon,
+                siteId,
+                parentId,
                 pageId,
                 createdById: authUser.id,
             },
         })
+    }).catch((error: unknown) => {
+        if (isUniqueConstraintError(error)) {
+            throw createError({ statusCode: 409, message: '此網站已存在相同的頁籤 slug' })
+        }
+        throw error
     })
 
     return {
         id: res.id,
         name: res.name,
         slug: res.slug,
+        url: res.url,
+        target: res.target,
+        icon: res.icon,
         viewTypeId: res.viewTypeId,
         sortOrder: res.sortOrder,
+        isEnabled: res.isEnabled,
         parentId: res.parentId,
         pageId: res.pageId,
     }

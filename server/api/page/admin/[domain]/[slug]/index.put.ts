@@ -1,8 +1,10 @@
 import { prisma } from '../../../../../utils/prisma'
-import { requireAuth } from '../../../../../utils/auth'
-import { getSiteByDomain } from '../../../../../utils/site'
-import { saveUploadedFileToSite } from '../../../../../utils/file'
-import type { H3Event, MultiPartData } from 'h3'
+import { requireAdmin } from '../../../../../utils/auth'
+import { removeStoredFile, saveUploadedFileToSite } from '../../../../../utils/file'
+import { discardStagedUpload, parseMultipartUpload } from '../../../../../utils/upload'
+import type { H3Event } from 'h3'
+import type { StagedUploadedFile } from '../../../../../utils/upload'
+import { normalizeSiteMenuSlug } from '../../../../../utils/site-menu'
 
 type UpdatePagePayload = {
     id?: number | string
@@ -13,7 +15,7 @@ type UpdatePagePayload = {
 }
 type ParsedUpdateRequest = {
     payload: UpdatePagePayload
-    uploadedFilePart?: MultiPartData
+    uploadedFilePart?: StagedUploadedFile
 }
 
 defineRouteMeta({
@@ -42,42 +44,18 @@ async function readUpdatePayload(event: H3Event): Promise<ParsedUpdateRequest> {
 
     // 如果是 formdata
     if (contentType.includes('multipart/form-data')) {
-        const formData = await readMultipartFormData(event)
-        const payload: UpdatePagePayload = {}
-        let uploadedFilePart: MultiPartData | undefined
-
-        for (const part of formData ?? []) {
-            if (part.filename) {
-                uploadedFilePart = part
-                continue
-            }
-
-            const value = part.data.toString()
-
-            switch (part.name) {
-                case 'id':
-                    payload.id = value
-                    break
-                case 'content':
-                    payload.content = value
-                    break
-                case 'status':
-                    payload.status = value
-                    break
-                case 'relatedFileID':
-                    payload.relatedFileID = value
-                    break
-                case 'title':
-                    payload.title = value
-                    break
-                default:
-                    break
-            }
+        const { fields, file } = await parseMultipartUpload(event)
+        const payload: UpdatePagePayload = {
+            id: fields.id,
+            content: fields.content,
+            status: fields.status,
+            relatedFileID: fields.relatedFileID,
+            title: fields.title,
         }
 
         return {
             payload,
-            uploadedFilePart,
+            uploadedFilePart: file,
         }
     }
     //  如果不是 formdata，則直接讀取 body
@@ -87,32 +65,27 @@ async function readUpdatePayload(event: H3Event): Promise<ParsedUpdateRequest> {
 }
 // /api/page/admin/:domain/:slug 更新後台頁面內容，需登入，可上傳檔案並回傳所有狀態的 page
 export default defineEventHandler(async (event) => {
-    const authUser = requireAuth(event)
+    const authUser = await requireAdmin(event)
     const domain = getRouterParam(event, 'domain') as string
     const slug = getRouterParam(event, 'slug') as string
     // 先處理 request 資料
     const { payload, uploadedFilePart } = await readUpdatePayload(event)
 
-    const pageId = Number(payload.id)
-    if (!pageId || Number.isNaN(pageId)) {
-        throw createError({
-            statusCode: 400,
-            message: 'page ID 為必填',
-        })
-    }
+    try {
+        const pageId = Number(payload.id)
+        if (!Number.isInteger(pageId) || pageId <= 0) {
+            throw createError({
+                statusCode: 400,
+                message: 'page ID 為必填',
+            })
+        }
 
-    const site = await getSiteByDomain(domain)
-    if (!site) {
-        throw createError({
-            statusCode: 400,
-            message: '沒有此 site',
-        })
-    }
+    const site = await requireSiteOwnerByDomain(authUser.id, domain)
 
     const siteMenu = await prisma.siteMenu.findFirst({
         where: {
             siteId: site.id,
-            slug: '/' + slug,
+            activeSlug: normalizeSiteMenuSlug(slug),
             isDeleted: false,
         },
         include: {
@@ -147,56 +120,100 @@ export default defineEventHandler(async (event) => {
         ? undefined
         : Number(payload.status)
 
-    if (nextStatus !== undefined && Number.isNaN(nextStatus)) {
+    if (nextStatus !== undefined && (!Number.isInteger(nextStatus) || ![0, 1].includes(nextStatus))) {
         throw createError({
             statusCode: 400,
             message: 'status 格式錯誤',
         })
     }
 
-    const nextRelatedFileId = payload.relatedFileID === undefined || payload.relatedFileID === null || payload.relatedFileID === ''
+    const nextRelatedFileId = payload.relatedFileID === undefined
         ? undefined
+        : payload.relatedFileID === null || payload.relatedFileID === ''
+            ? null
         : Number(payload.relatedFileID)
 
-    if (nextRelatedFileId !== undefined && Number.isNaN(nextRelatedFileId)) {
+    if (nextRelatedFileId !== undefined && nextRelatedFileId !== null
+        && (!Number.isInteger(nextRelatedFileId) || nextRelatedFileId <= 0)) {
         throw createError({
             statusCode: 400,
             message: 'relatedFileID 格式錯誤',
         })
     }
 
-    const updatedPage = await prisma.$transaction(async (tx) => {
-        let relatedFileID = nextRelatedFileId
+    if (typeof nextRelatedFileId === 'number') {
+        await requireFileInSite(nextRelatedFileId, site.id)
+    }
 
-        if (uploadedFilePart) {
-            const fileRecord = await saveUploadedFileToSite(site.id, authUser.id, uploadedFilePart, 'page', tx)
-            relatedFileID = fileRecord.id
-        }
+    if (payload.title !== undefined && payload.title !== null
+        && (typeof payload.title !== 'string' || [...payload.title].length > 200)) {
+        throw createError({ statusCode: 400, message: 'title 格式錯誤或超過 200 個字元' })
+    }
+    if (payload.content !== undefined && payload.content !== null
+        && (typeof payload.content !== 'string' || Buffer.byteLength(payload.content, 'utf8') > 16_777_215)) {
+        throw createError({ statusCode: 400, message: 'content 格式錯誤或超過資料庫限制' })
+    }
 
-        return tx.page.update({
-            where: {
-                id: siteMenu.page!.id,
-            },
-            data: {
-                title: payload.title ?? undefined,
-                content: payload.content ?? undefined,
-                ...(nextStatus !== undefined ? { status: nextStatus } : {}),
-                ...(relatedFileID !== undefined ? { relatedFileID } : {}),
-                updatedBy: authUser.id,
-            },
-            include: {
-                file: true,
-                sections: {
-                    orderBy: {
-                        sortOrder: 'asc',
+        let newlyStoredPath: string | undefined
+        try {
+            const updatedPage = await prisma.$transaction(async (tx) => {
+                let relatedFileID = nextRelatedFileId
+
+                if (uploadedFilePart) {
+                    const fileRecord = await saveUploadedFileToSite(site.id, authUser.id, uploadedFilePart, 'page', tx)
+                    newlyStoredPath = fileRecord.path
+                    relatedFileID = fileRecord.id
+                }
+
+                if (typeof relatedFileID === 'number') {
+                    const existingUsage = await tx.pageFile.findFirst({
+                        where: { pageId: siteMenu.page!.id, fileId: relatedFileID, usage: 'attachment', sectionId: null },
+                    })
+                    if (!existingUsage) {
+                        await tx.pageFile.create({
+                            data: { siteId: site.id, pageId: siteMenu.page!.id, fileId: relatedFileID, usage: 'attachment' },
+                        })
+                    }
+                }
+                if (siteMenu.page!.relatedFileID && siteMenu.page!.relatedFileID !== relatedFileID) {
+                    await tx.pageFile.deleteMany({
+                        where: { pageId: siteMenu.page!.id, fileId: siteMenu.page!.relatedFileID, usage: 'attachment' },
+                    })
+                }
+
+                return tx.page.update({
+                    where: {
+                        id: siteMenu.page!.id,
                     },
-                },
-            },
-        })
-    })
+                    data: {
+                        title: payload.title ?? undefined,
+                        content: payload.content ?? undefined,
+                        ...(nextStatus !== undefined ? { status: nextStatus } : {}),
+                        ...(nextStatus === 1 ? { archivedAt: null, archivedBy: null } : {}),
+                        ...(nextStatus === 0 ? { archivedAt: new Date(), archivedBy: authUser.id } : {}),
+                        ...(relatedFileID !== undefined ? { relatedFileID } : {}),
+                        updatedBy: authUser.id,
+                    },
+                    include: {
+                        file: true,
+                        sections: {
+                            orderBy: {
+                                sortOrder: 'asc',
+                            },
+                        },
+                    },
+                })
+            })
 
-    return {
-        ...updatedPage,
-        pageId: updatedPage.id,
+            return {
+                ...updatedPage,
+                pageId: updatedPage.id,
+            }
+        } catch (error) {
+            if (newlyStoredPath) await removeStoredFile(newlyStoredPath)
+            throw error
+        }
+    } finally {
+        await discardStagedUpload(uploadedFilePart)
     }
 })

@@ -1,8 +1,25 @@
+import type { Prisma } from '../../app/generated/prisma/client.js'
 import { prisma } from './prisma'
 import { getSiteByDomain } from './site'
+import { normalizeSiteMenuSlug } from './site-menu'
 
-export async function getPageContent(domain: string, slug: string, status?: boolean) {
+export type PageVisibility = 'admin' | 'public'
 
+const PUBLISHED_PAGE_STATUS = 1
+const PAGE_VIEW_TYPES = new Set(['home', 'page', 'pdf'])
+
+function notFound(message: string) {
+    return createError({
+        statusCode: 404,
+        message,
+    })
+}
+
+async function getSiteMenuWhere(
+    domain: string,
+    slug: string,
+    visibility: PageVisibility,
+): Promise<Prisma.SiteMenuWhereInput> {
     if (!domain || !slug) {
         throw createError({
             statusCode: 400,
@@ -12,56 +29,37 @@ export async function getPageContent(domain: string, slug: string, status?: bool
 
     const site = await getSiteByDomain(domain)
     if (!site) {
-        throw createError({
-            statusCode: 400,
-            message: '沒有此 site',
-        })
+        throw notFound('沒有此 site')
     }
 
-    if (slug === 'home') {
-        const siteMenu = await prisma.siteMenu.findFirst({
-            where: {
-                siteId: site.id,
-                isDeleted: false,
-                viewTypeRelation: {
-                    name: 'home',
-                },
-            },
-            include: {
-                viewTypeRelation: true,
-                page: {
-                    include: {
-                        sections: {
-                            orderBy: {
-                                sortOrder: 'asc',
-                            },
-                        },
+    return {
+        siteId: site.id,
+        isDeleted: false,
+        ...(visibility === 'public' ? { isEnabled: true } : {}),
+        ...(slug === 'home'
+            ? {
+                    viewTypeRelation: {
+                        name: 'home',
                     },
-                },
-            },
-        })
-
-        if (!siteMenu) {
-            throw createError({
-                statusCode: 400,
-                message: '沒有此 siteMenu',
-            })
-        }
-
-        return siteMenu
+                }
+            : { activeSlug: normalizeSiteMenuSlug(slug) }),
     }
+}
 
+export async function getPageContent(
+    domain: string,
+    slug: string,
+    visibility: PageVisibility = 'admin',
+) {
+    const where = await getSiteMenuWhere(domain, slug, visibility)
     const siteMenu = await prisma.siteMenu.findFirst({
-        where: {
-            siteId: site.id,
-            slug: '/' + slug,
-            isDeleted: false,
-        },
+        where,
         include: {
             viewTypeRelation: true,
             page: {
                 include: {
                     sections: {
+                        where: visibility === 'public' ? { isEnabled: true } : undefined,
                         orderBy: {
                             sortOrder: 'asc',
                         },
@@ -72,22 +70,14 @@ export async function getPageContent(domain: string, slug: string, status?: bool
     })
 
     if (!siteMenu) {
-        throw createError({
-            statusCode: 400,
-            message: '沒有此 siteMenu',
-        })
+        throw notFound('沒有此 siteMenu')
     }
 
     const viewTypeName = siteMenu.viewTypeRelation?.name?.toLowerCase()
-    const requiredPageStatus = typeof status === 'boolean' ? Number(status) : null
+    const hasPageContent = viewTypeName !== undefined && PAGE_VIEW_TYPES.has(viewTypeName)
 
-    if (requiredPageStatus !== null && (viewTypeName === 'page' || viewTypeName === 'pdf')) {
-        if (siteMenu.page?.status !== requiredPageStatus) {
-            throw createError({
-                statusCode: 404,
-                message: '沒有此 page',
-            })
-        }
+    if (visibility === 'public' && hasPageContent && siteMenu.page?.status !== PUBLISHED_PAGE_STATUS) {
+        throw notFound('沒有此 page')
     }
 
     if (viewTypeName === 'page' || viewTypeName === 'pdf') {
@@ -97,68 +87,30 @@ export async function getPageContent(domain: string, slug: string, status?: bool
     return siteMenu
 }
 
-export async function getPageId(domain: string, slug: string) {
-    if (!domain || !slug) {
-        throw createError({
-            statusCode: 400,
-            message: 'Domain 與 slug 為必填',
-        })
-    }
-
-    const site = await getSiteByDomain(domain)
-    if (!site) {
-        throw createError({
-            statusCode: 400,
-            message: '沒有此 site',
-        })
-    }
-
-    if (slug === 'home') {
-        const siteMenu = await prisma.siteMenu.findFirst({
-            where: {
-                siteId: site.id,
-                isDeleted: false,
-                viewTypeRelation: {
-                    name: 'home',
-                },
-            },
-            include: {
-                viewTypeRelation: true,
-                page: {
-                    include: {
-                        sections: {
-                            orderBy: {
-                                sortOrder: 'asc',
-                            },
-                        },
-                    },
-                },
-            },
-        })
-
-        if (!siteMenu) {
-            throw createError({
-                statusCode: 400,
-                message: '沒有此 siteMenu',
-            })
-        }
-
-        return siteMenu.pageId
-    }
-
+export async function getPageId(
+    domain: string,
+    slug: string,
+    visibility: PageVisibility = 'admin',
+) {
+    const where = await getSiteMenuWhere(domain, slug, visibility)
     const siteMenu = await prisma.siteMenu.findFirst({
         where: {
-            siteId: site.id,
-            slug: '/' + slug,
-            isDeleted: false,
+            ...where,
+            ...(visibility === 'public'
+                ? {
+                        page: {
+                            status: PUBLISHED_PAGE_STATUS,
+                        },
+                    }
+                : {}),
+        },
+        select: {
+            pageId: true,
         },
     })
 
     if (!siteMenu) {
-        throw createError({
-            statusCode: 400,
-            message: '沒有此 siteMenu',
-        })
+        throw notFound('沒有此 siteMenu')
     }
 
     return siteMenu.pageId
